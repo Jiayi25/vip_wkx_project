@@ -1,0 +1,1611 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>推手活动专区</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; padding: 20px; }
+        
+        /* Tab导航 */
+        .tab-nav { display: flex; gap: 10px; margin-bottom: 20px; background: #fff; padding: 15px 20px; border-radius: 12px; flex-wrap: wrap; }
+        .tab-btn { padding: 10px 20px; border: none; background: #f0f0f0; border-radius: 8px; cursor: pointer; font-size: 14px; transition: all 0.3s; }
+        .tab-btn.active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; }
+        
+        /* 场景容器 */
+        .scene { display: none; background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .scene.active { display: block; }
+        .scene-title { font-size: 18px; font-weight: 600; color: #333; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #667eea; }
+        .scene-desc { font-size: 13px; color: #666; margin-bottom: 15px; background: #f8f9fa; padding: 10px; border-radius: 8px; }
+        
+        /* 手机模拟器 */
+        .phone-frame { width: 375px; min-height: 800px; margin: 0 auto; background: #fff; border-radius: 40px; padding: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); position: relative; overflow: hidden; }
+        .phone-notch { width: 150px; height: 30px; background: #000; border-radius: 0 0 20px 20px; position: absolute; top: 0; left: 50%; transform: translateX(-50%); z-index: 10; }
+        .phone-screen { padding-top: 30px; height: 100%; overflow-y: auto; }
+        
+        /* ==================== 活动专区首页 ==================== */
+        .zone-header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px 16px; color: #fff; text-align: center; }
+        .zone-title { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+        .zone-subtitle { font-size: 13px; opacity: 0.9; }
+        .zone-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 16px; }
+        .zone-stat { background: rgba(255,255,255,0.2); padding: 12px; border-radius: 10px; text-align: center; }
+        .zone-stat-value { font-size: 18px; font-weight: 700; }
+        .zone-stat-label { font-size: 11px; opacity: 0.9; margin-top: 2px; }
+        
+        /* 任务分类 */
+        .task-category { padding: 16px; }
+        .category-title { font-size: 15px; font-weight: 600; color: #333; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+        .category-icon { font-size: 20px; }
+        
+        /* 活动卡片 */
+        .activity-card { background: #fff; border: 1px solid #e8e8e8; border-radius: 12px; padding: 14px; margin-bottom: 12px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: all 0.3s; }
+        .activity-card:hover { border-color: #667eea; box-shadow: 0 4px 12px rgba(102,126,234,0.15); }
+        .activity-card:active { transform: scale(0.98); }
+        .activity-icon { width: 48px; height: 48px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; }
+        .activity-icon.orange { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .activity-icon.green { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
+        .activity-icon.red { background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%); }
+        .activity-icon.blue { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        .activity-content { flex: 1; min-width: 0; }
+        .activity-name { font-size: 15px; font-weight: 600; color: #333; margin-bottom: 4px; }
+        .activity-desc { font-size: 12px; color: #999; }
+        .activity-tag { display: inline-block; background: #fff5f5; color: #f5576c; font-size: 10px; padding: 2px 8px; border-radius: 10px; margin-top: 4px; }
+        .activity-tag.new { background: #e8f5e9; color: #2e7d32; }
+        .activity-tag.hot { background: #fff3e0; color: #e65100; }
+        .activity-arrow { font-size: 18px; color: #ccc; }
+        
+        /* 已完成状态 */
+        .activity-card.completed { background: #f8fff8; border-color: #c8e6c9; }
+        .activity-card.completed .activity-icon { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
+        
+        /* ==================== 通用样式 ==================== */
+        .card { background: #fff; border-radius: 16px; padding: 16px; margin-bottom: 12px; }
+        .page-header { display: flex; align-items: center; padding: 12px 16px; background: #fff; border-bottom: 1px solid #f0f0f0; }
+        .back-btn { font-size: 20px; color: #333; margin-right: 12px; cursor: pointer; }
+        .page-title { font-size: 17px; font-weight: 600; color: #333; }
+        
+        /* 阶段卡片 */
+        .phase-card { border: 1px solid #e8e8e8; border-radius: 12px; padding: 14px; margin-bottom: 10px; position: relative; }
+        .phase-card.completed { border-color: #34a853; background: #f8fff8; }
+        .phase-card.current { border-color: #1a73e8; background: #f0f5ff; }
+        .phase-card.locked { border-color: #e0e0e0; background: #fafafa; }
+        .phase-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+        .phase-icon { font-size: 18px; }
+        .phase-title { font-size: 14px; font-weight: 600; color: #333; }
+        .phase-period { font-size: 11px; color: #999; margin-left: auto; }
+        .phase-progress-wrap { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        .phase-progress-bar { flex: 1; height: 8px; background: #e0e0e0; border-radius: 4px; overflow: hidden; }
+        .phase-progress-fill { height: 100%; background: linear-gradient(90deg, #1a73e8, #6c5ce7); border-radius: 4px; }
+        .phase-progress-text { font-size: 12px; color: #666; white-space: nowrap; }
+        .phase-threshold { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: rgba(26,115,232,0.08); border-radius: 8px; margin-bottom: 8px; }
+        .threshold-label { font-size: 12px; color: #666; }
+        .threshold-value { font-size: 14px; font-weight: 600; color: #1a73e8; }
+        .phase-expected { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border-radius: 8px; color: #fff; }
+        .expected-label { font-size: 12px; }
+        .expected-value { font-size: 16px; font-weight: 700; }
+        .phase-locked-content { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #999; }
+        .phase-completed-info { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 12px; color: #666; }
+        .phase-completed-info .value { color: #34a853; font-weight: 600; }
+        .phase-reward { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #666; }
+        .phase-reward .value { color: #f5576c; font-weight: 600; }
+        
+        .activity-info { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 16px; color: #fff; }
+        .activity-status { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 13px; }
+        .status-tag { background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 12px; }
+        .activity-period { opacity: 0.9; font-size: 12px; }
+        
+        .overall-progress { background: #fff; border-radius: 16px; padding: 16px; margin: 12px 16px; }
+        .overall-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .overall-title { font-size: 13px; color: #666; }
+        .overall-count { font-size: 13px; color: #1a73e8; font-weight: 600; }
+        .overall-bar { height: 8px; background: #f0f0f0; border-radius: 4px; position: relative; }
+        .overall-fill { height: 100%; background: linear-gradient(90deg, #1a73e8, #6c5ce7); border-radius: 4px; }
+        .overall-milestones { display: flex; justify-content: space-between; margin-top: 8px; font-size: 10px; color: #999; }
+        
+        .phase-section { padding: 0 16px; }
+        .activity-rules { padding: 16px; }
+        .rules-title { font-size: 14px; font-weight: 600; color: #333; margin-bottom: 12px; }
+        .rules-list { list-style: none; }
+        .rules-list li { font-size: 12px; color: #666; line-height: 1.8; padding-left: 16px; position: relative; margin-bottom: 6px; }
+        .rules-list li::before { content: '•'; position: absolute; left: 0; color: #1a73e8; }
+        
+        .next-phase-preview { border: 2px dashed #34a853; background: #f8fff8; margin: 10px 16px; border-radius: 12px; padding: 14px; }
+        .preview-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+        .preview-badge { background: #34a853; color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 4px; }
+        .preview-title { font-size: 13px; color: #34a853; font-weight: 500; }
+        .preview-content { display: flex; justify-content: space-between; font-size: 12px; color: #666; }
+        .preview-reward { color: #34a853; font-weight: 600; }
+        
+        /* ==================== Case4: 全部完成 ==================== */
+        .completion-header { text-align: center; padding: 24px 16px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; margin-bottom: 16px; }
+        .completion-icon { font-size: 56px; margin-bottom: 12px; }
+        .completion-title { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+        .completion-sub { font-size: 13px; opacity: 0.9; }
+        .growth-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 0 16px; margin-bottom: 16px; }
+        .growth-item { background: #f8f9fa; padding: 14px; border-radius: 12px; text-align: center; }
+        .growth-value { font-size: 20px; font-weight: 700; color: #1a73e8; margin-bottom: 4px; }
+        .growth-label { font-size: 11px; color: #666; }
+        .growth-trend { font-size: 11px; color: #34a853; margin-top: 4px; }
+        .level-up { display: flex; align-items: center; justify-content: center; gap: 16px; padding: 16px; background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%); border-radius: 12px; margin: 0 16px 16px; }
+        .level-badge { width: 56px; height: 56px; background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: #333; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .timeline { padding: 16px; background: #f8f9fa; border-radius: 12px; margin: 0 16px; }
+        .timeline-title { font-size: 14px; font-weight: 600; color: #333; margin-bottom: 14px; }
+        .timeline-item { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+        .timeline-dot { width: 28px; height: 28px; background: #34a853; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 13px; }
+        .timeline-content { flex: 1; }
+        .timeline-label { font-size: 13px; color: #333; font-weight: 500; }
+        .timeline-value { font-size: 12px; color: #666; }
+        .total-reward { display: flex; justify-content: space-between; align-items: center; padding: 16px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border-radius: 12px; color: #fff; margin: 16px; }
+        .total-reward-label { font-size: 14px; }
+        .total-reward-value { font-size: 24px; font-weight: 700; }
+        
+        /* ==================== 任务详细页样式 ==================== */
+        .task-banner { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 16px; color: #fff; text-align: center; }
+        .task-banner-icon { font-size: 48px; margin-bottom: 8px; }
+        .task-banner-title { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+        .task-banner-desc { font-size: 13px; opacity: 0.9; }
+        
+        .task-progress-section { padding: 16px; }
+        .task-progress-card { background: #fff; border-radius: 12px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .task-progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .task-progress-title { font-size: 15px; font-weight: 600; color: #333; }
+        .task-progress-count { font-size: 13px; color: #1a73e8; }
+        
+        .task-item { display: flex; align-items: center; gap: 12px; padding: 14px 0; border-bottom: 1px solid #f0f0f0; }
+        .task-item:last-child { border-bottom: none; }
+        .task-check { width: 22px; height: 22px; border: 2px solid #ddd; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; }
+        .task-check.done { background: #34a853; border-color: #34a853; color: #fff; }
+        .task-check.doing { background: #1a73e8; border-color: #1a73e8; color: #fff; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+        .task-info { flex: 1; }
+        .task-name { font-size: 14px; color: #333; margin-bottom: 2px; }
+        .task-name.done { color: #999; text-decoration: line-through; }
+        .task-reward { font-size: 12px; color: #f5576c; }
+        .task-amount { font-size: 14px; font-weight: 600; color: #333; }
+        
+        .task-action-btn { padding: 12px 24px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: #fff; border: none; border-radius: 24px; font-size: 15px; font-weight: 600; width: 100%; margin-top: 16px; cursor: pointer; box-shadow: 0 4px 12px rgba(245,87,108,0.3); }
+        
+        /* 红包样式 */
+        .surprise-redpacket { position: relative; height: 40px; margin-bottom: 10px; }
+        .surprise-redpacket .bar { position: absolute; top: 18px; left: 0; right: 0; height: 8px; background: #e0e0e0; border-radius: 4px; }
+        .surprise-redpacket .fill { height: 100%; background: linear-gradient(90deg, #1a73e8, #6c5ce7); border-radius: 4px; width: 40%; }
+        .surprise-redpacket .badge { position: absolute; left: calc(40% - 52px); top: -6px; background: linear-gradient(135deg, #ff6b6b, #ee5a24); color: #fff; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 600; box-shadow: 0 2px 8px rgba(238,90,36,0.4); white-space: nowrap; }
+        .surprise-redpacket .arrow { position: absolute; left: calc(40% - 18px); top: 24px; width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 5px solid #ee5a24; }
+        .redpacket-tip { display: flex; align-items: center; gap: 6px; padding: 10px 12px; background: #fff5f5; border-radius: 8px; font-size: 12px; color: #ee5a24; margin-top: 10px; }
+        
+        /* 分享任务样式 */
+        .share-task-card { background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .share-task-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+        .share-task-icon { width: 44px; height: 44px; background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+        .share-task-title { font-size: 15px; font-weight: 600; color: #333; }
+        .share-task-sub { font-size: 12px; color: #999; }
+        .share-task-reward { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #f5576c; margin-bottom: 12px; }
+        .share-task-btn { width: 100%; padding: 12px; background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: #fff; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        
+        /* 关注任务样式 */
+        .follow-task-card { background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .follow-task-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+        .follow-task-icon { width: 44px; height: 44px; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+        .follow-task-title { font-size: 15px; font-weight: 600; color: #333; }
+        .follow-task-sub { font-size: 12px; color: #999; }
+        .follow-task-reward { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #f5576c; margin-bottom: 12px; }
+        .follow-task-btn { width: 100%; padding: 12px; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: #fff; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        
+        /* 二维码展示 */
+        .qrcode-section { background: #fff; border-radius: 12px; padding: 20px; text-align: center; margin-top: 16px; }
+        .qrcode-box { width: 160px; height: 160px; background: #f8f9fa; border-radius: 12px; margin: 0 auto 12px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #999; }
+        .qrcode-tip { font-size: 13px; color: #666; }
+        
+        /* ==================== 运营后台通用样式 ==================== */
+        .admin-panel { background: #fff; border-radius: 12px; padding: 20px; }
+        .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .admin-title { font-size: 18px; font-weight: 600; }
+        .btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; transition: all 0.3s; }
+        .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; }
+        .btn-primary:hover { opacity: 0.9; }
+        .btn-success { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: #fff; }
+        .btn-orange { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: #fff; }
+        
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; }
+        .stat-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 12px; color: #fff; }
+        .stat-value { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+        .stat-label { font-size: 12px; opacity: 0.9; }
+        .stat-card.warning { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .stat-card.success { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
+        .stat-card.orange { background: linear-gradient(135deg, #f12711 0%, #f5af19 100%); }
+        
+        .form-section { background: #f8f9fa; padding: 20px; border-radius: 12px; margin-bottom: 16px; }
+        .form-section-title { font-size: 14px; font-weight: 600; color: #333; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+        .form-row { display: flex; gap: 16px; margin-bottom: 16px; }
+        .form-group { flex: 1; }
+        .form-label { display: block; font-size: 13px; color: #666; margin-bottom: 6px; }
+        .form-input, .form-select { width: 100%; padding: 10px 12px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; }
+        
+        .filter-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+        .filter-tab { padding: 8px 16px; background: #f0f0f0; border: none; border-radius: 20px; font-size: 13px; cursor: pointer; }
+        .filter-tab.active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; }
+        
+        .table { width: 100%; border-collapse: collapse; }
+        .table th, .table td { padding: 12px 8px; text-align: left; border-bottom: 1px solid #e8e8e8; font-size: 13px; }
+        .table th { background: #f8f9fa; font-weight: 600; color: #666; }
+        .status-badge { padding: 4px 10px; border-radius: 12px; font-size: 11px; }
+        .status-active { background: #e8f5e9; color: #2e7d32; }
+        .status-pending { background: #fff3e0; color: #e65100; }
+        .status-ended { background: #f5f5f5; color: #9e9e9e; }
+        .progress-bar-mini { width: 80px; height: 6px; background: #f0f0f0; border-radius: 3px; display: inline-block; vertical-align: middle; margin-right: 6px; }
+        .progress-bar-mini-fill { height: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 3px; }
+        
+        .action-btns { display: flex; gap: 8px; }
+        .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 6px; border: none; cursor: pointer; }
+        .btn-info { background: #e3f2fd; color: #1565c0; }
+        .btn-danger { background: #ffebee; color: #c62828; }
+        
+        .form-actions { display: flex; gap: 12px; justify-content: center; margin-top: 24px; padding-top: 20px; border-top: 1px solid #e8e8e8; }
+        
+        /* 任务类型卡片 */
+        .task-type-card { background: #fff; border: 2px solid #e8e8e8; border-radius: 12px; padding: 16px; margin-bottom: 12px; cursor: pointer; transition: all 0.3s; }
+        .task-type-card:hover { border-color: #667eea; }
+        .task-type-card.selected { border-color: #667eea; background: #f8f5ff; }
+        .task-type-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+        .task-type-icon { width: 44px; height: 44px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+        .task-type-title { font-size: 15px; font-weight: 600; color: #333; }
+        .task-type-desc { font-size: 12px; color: #666; margin-bottom: 8px; }
+        .task-type-config { background: #f8f9fa; border-radius: 8px; padding: 12px; }
+        .config-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .config-row:last-child { margin-bottom: 0; }
+        .config-label { font-size: 12px; color: #666; }
+        .config-input { width: 120px; padding: 6px 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 13px; text-align: right; }
+        
+        /* 专区配置卡片 */
+        .zone-config-card { background: #fff; border: 1px solid #e8e8e8; border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+        .zone-config-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .zone-config-title { font-size: 15px; font-weight: 600; color: #333; display: flex; align-items: center; gap: 8px; }
+        .zone-config-switch { width: 44px; height: 24px; background: #e0e0e0; border-radius: 12px; position: relative; cursor: pointer; }
+        .zone-config-switch.active { background: #34a853; }
+        .zone-config-switch::after { content: ''; position: absolute; width: 20px; height: 20px; background: #fff; border-radius: 50%; top: 2px; left: 2px; transition: all 0.3s; }
+        .zone-config-switch.active::after { left: 22px; }
+        .zone-task-list { background: #f8f9fa; border-radius: 8px; padding: 12px; }
+        .zone-task-item { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid #e8e8e8; font-size: 13px; color: #666; }
+        .zone-task-item:last-child { border-bottom: none; }
+        .zone-task-check { width: 18px; height: 18px; border: 2px solid #ddd; border-radius: 4px; display: flex; align-items: center; justify-content: center; }
+        .zone-task-check.checked { background: #667eea; border-color: #667eea; color: #fff; }
+    </style>
+</head>
+<body>
+    <!-- Tab导航 -->
+    <div class="tab-nav">
+        <button class="tab-btn active" onclick="showScene('scene-zone')">活动专区首页</button>
+        <button class="tab-btn" onclick="showScene('scene-sign')">来访签到任务</button>
+        <button class="tab-btn" onclick="showScene('scene-share')">分享有奖任务</button>
+        <button class="tab-btn" onclick="showScene('scene-follow')">关注任务</button>
+        <button class="tab-btn" onclick="showScene('scene-personal')">个性化活动</button>
+        <button class="tab-btn" onclick="showScene('scene-zone-admin')">专区管理</button>
+        <button class="tab-btn" onclick="showScene('scene-personal-admin')">个性化管理</button>
+    </div>
+
+    <!-- ==================== 活动专区首页（对比视图） ==================== -->
+    <div id="scene-zone" class="scene active">
+        <div class="scene-title">推手活动专区 - 首页对比</div>
+        <div class="scene-desc">左侧为现有可参与活动列表，右侧为新设计的推手活动专区</div>
+        
+        <!-- 业务活动体系新升级 -->
+        <div style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);border-radius:16px;padding:28px;margin-bottom:24px;color:#fff;">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+                <span style="font-size:32px;">🚀</span>
+                <div>
+                    <h2 style="font-size:20px;font-weight:700;margin-bottom:4px;">业务活动体系新升级</h2>
+                    <p style="font-size:13px;opacity:0.9;">让推手一进来就清晰看到任务目标，完成即可获得奖励</p>
+                </div>
+            </div>
+            
+            <!-- 核心升级点 -->
+            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;">
+                <div style="background:rgba(255,255,255,0.15);border-radius:12px;padding:18px;text-align:center;">
+                    <div style="font-size:28px;margin-bottom:10px;">👁️</div>
+                    <div style="font-size:14px;font-weight:600;margin-bottom:6px;">目标清晰</div>
+                    <div style="font-size:12px;opacity:0.9;line-height:1.5;">推手一进来就很明确地看到他当前有什么任务，我要做什么</div>
+                </div>
+                <div style="background:rgba(255,255,255,0.15);border-radius:12px;padding:18px;text-align:center;">
+                    <div style="font-size:28px;margin-bottom:10px;">📈</div>
+                    <div style="font-size:14px;font-weight:600;margin-bottom:6px;">能力匹配</div>
+                    <div style="font-size:12px;opacity:0.9;line-height:1.5;margin-bottom:10px;">迭代二级生命周期标签，差异化推手能力评估，提升ROI</div>
+                    <a href="https://docs.corp.vipshop.com/sheets/AWWegdvRymRNC015/yiIEE#anchor-A1:Q208" target="_blank" style="display:inline-flex;align-items:center;gap:6px;font-size:11px;color:#fff;background:rgba(255,255,255,0.25);padding:4px 10px;border-radius:4px;text-decoration:none;">
+                        📊 《生命周期人群口径及人数_2026》
+                        <span style="font-size:9px;">↗</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 对比容器 -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+            
+            <!-- 左侧：现有活动列表（图片展示） -->
+            <div>
+                <div style="text-align:center;margin-bottom:16px;">
+                    <span style="display:inline-block;background:#ff9800;color:#fff;padding:8px 20px;border-radius:20px;font-size:14px;font-weight:600;">📱 现有可参与活动列表</span>
+                </div>
+                <div class="phone-frame" style="border:3px solid #ff9800;">
+                    <div class="phone-notch"></div>
+                    <div class="phone-screen">
+                        <!-- 页面头部 -->
+                        <div class="page-header">
+                            <span class="back-btn">←</span>
+                            <span class="page-title">可参与活动</span>
+                        </div>
+                        
+                        <!-- 图片展示区域 -->
+                        <div style="padding:12px;text-align:center;">
+                            <img src="D:/Users/kayee.lao/CodeBuddy/20260417120133/现有推手活动列表页.jpg" alt="现有可参与活动列表截图" style="width:100%;max-width:320px;border-radius:12px;border:1px solid #e0e0e0;" onerror="this.style.display='none';this.nextElementSibling.style.display='block';">
+                            <div style="display:none;padding:40px 20px;background:#f8f9fa;border-radius:12px;text-align:center;">
+                                <div style="font-size:48px;margin-bottom:12px;">📱</div>
+                                <div style="font-size:14px;color:#666;margin-bottom:8px;">现有可参与活动列表截图</div>
+                                <div style="font-size:12px;color:#999;">（请放置实际截图）</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div style="text-align:center;margin-top:12px;">
+                    <span style="font-size:12px;color:#666;">❌ 分散、无分类、无激励体系</span>
+                </div>
+            </div>
+            
+            <!-- 右侧：新的推手活动专区 -->
+            <div>
+                <div style="text-align:center;margin-bottom:16px;">
+                    <span style="display:inline-block;background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);color:#fff;padding:8px 20px;border-radius:20px;font-size:14px;font-weight:600;">📱 新推手活动专区</span>
+                </div>
+                <div class="phone-frame" style="border:3px solid #667eea;">
+                    <div class="phone-notch"></div>
+                    <div class="phone-screen">
+                        <!-- 专区头部 -->
+                        <div class="zone-header">
+                            <div class="zone-title">🎯 推手活动专区</div>
+                            <div class="zone-subtitle">专属福利，助你快速成长</div>
+                            <div class="zone-stats">
+                                <div class="zone-stat">
+                                    <div class="zone-stat-value">4</div>
+                                    <div class="zone-stat-label">进行中活动</div>
+                                </div>
+                                <div class="zone-stat">
+                                    <div class="zone-stat-value">¥128</div>
+                                    <div class="zone-stat-label">可获奖励</div>
+                                </div>
+                                <div class="zone-stat">
+                                    <div class="zone-stat-value">3</div>
+                                    <div class="zone-stat-label">已完成</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 任务分类 -->
+                        <div class="task-category">
+                            <div class="category-title">
+                                <span class="category-icon">📅</span>
+                                <span>来访与签到</span>
+                            </div>
+                            <div class="activity-card" onclick="showScene('scene-sign')">
+                                <div class="activity-icon orange">🎁</div>
+                                <div class="activity-content">
+                                    <div class="activity-name">每日签到有礼</div>
+                                    <div class="activity-desc">连续签到可获幸运红包</div>
+                                    <span class="activity-tag new">进行中</span>
+                                </div>
+                                <span class="activity-arrow">›</span>
+                            </div>
+                        </div>
+                        
+                        <div class="task-category">
+                            <div class="category-title">
+                                <span class="category-icon">🚀</span>
+                                <span>分享与邀请</span>
+                            </div>
+                            <div class="activity-card" onclick="showScene('scene-share')">
+                                <div class="activity-icon green">📤</div>
+                                <div class="activity-content">
+                                    <div class="activity-name">分享有奖</div>
+                                    <div class="activity-desc">分享专属链接，好友下单得红包</div>
+                                    <span class="activity-tag hot">热门</span>
+                                </div>
+                                <span class="activity-arrow">›</span>
+                            </div>
+                        </div>
+                        
+                        <div class="task-category">
+                            <div class="category-title">
+                                <span class="category-icon">💬</span>
+                                <span>关注与加入</span>
+                            </div>
+                            <div class="activity-card" onclick="showScene('scene-follow')">
+                                <div class="activity-icon blue">➕</div>
+                                <div class="activity-content">
+                                    <div class="activity-name">添加企微好友</div>
+                                    <div class="activity-desc">添加客服企微，领取成长营入场券</div>
+                                    <span class="activity-tag new">新任务</span>
+                                </div>
+                                <span class="activity-arrow">›</span>
+                            </div>
+                        </div>
+                        
+                        <div class="task-category">
+                            <div class="category-title">
+                                <span class="category-icon">🎯</span>
+                                <span>个性化让利活动</span>
+                            </div>
+                            <div class="activity-card completed" onclick="showScene('scene-personal')">
+                                <div class="activity-icon">📊</div>
+                                <div class="activity-content">
+                                    <div class="activity-name">成长大礼包</div>
+                                    <div class="activity-desc">按阶段完成出单任务，获得让利奖励</div>
+                                    <span class="activity-tag new">进行中</span>
+                                </div>
+                                <span class="activity-arrow">›</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div style="text-align:center;margin-top:12px;">
+                    <span style="font-size:12px;color:#34a853;">✅ 分类清晰、激励明确、成长体系</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 对比总结 -->
+        <div style="margin-top:24px;background:#f8f9fa;padding:20px;border-radius:12px;">
+            <h4 style="font-size:16px;font-weight:600;margin-bottom:12px;">📋 优化对比</h4>
+            <table style="width:100%;font-size:13px;border-collapse:collapse;">
+                <tr style="border-bottom:1px solid #e0e0e0;">
+                    <th style="text-align:left;padding:8px;width:20%;">对比项</th>
+                    <th style="text-align:left;padding:8px;width:40%;color:#ff9800;">❌ 现有列表</th>
+                    <th style="text-align:left;padding:8px;width:40%;color:#34a853;">✅ 新专区</th>
+                </tr>
+                <tr style="border-bottom:1px solid #e0e0e0;">
+                    <td style="padding:8px;font-weight:600;">活动组织</td>
+                    <td style="padding:8px;">分散展示，无分类</td>
+                    <td style="padding:8px;">按类型分类，结构清晰</td>
+                </tr>
+                <tr style="border-bottom:1px solid #e0e0e0;">
+                    <td style="padding:8px;font-weight:600;">目标人群</td>
+                    <td style="padding:8px;">面向所有推手</td>
+                    <td style="padding:8px;">聚焦成长期推手（近180天未出单）</td>
+                </tr>
+                <tr style="border-bottom:1px solid #e0e0e0;">
+                    <td style="padding:8px;font-weight:600;">激励体系</td>
+                    <td style="padding:8px;">单一活动，单次奖励</td>
+                    <td style="padding:8px;">阶段递进，持续激励</td>
+                </tr>
+                <tr>
+                    <td style="padding:8px;font-weight:600;">成长路径</td>
+                    <td style="padding:8px;">无明确成长路径</td>
+                    <td style="padding:8px;">签到→分享→关注→个性化，四阶段成长</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- ==================== 来访签到任务 ==================== -->
+    <div id="scene-sign" class="scene">
+        <div class="scene-title">来访签到任务</div>
+        <div class="scene-desc">每日来访签到可获得幸运红包，连续签到奖励加倍</div>
+        <div class="phone-frame">
+            <div class="phone-notch"></div>
+            <div class="phone-screen">
+                <!-- 页面头部 -->
+                <div class="page-header" onclick="showScene('scene-zone')">
+                    <span class="back-btn">←</span>
+                    <span class="page-title">每日签到有礼</span>
+                </div>
+                
+                <!-- Banner -->
+                <div class="task-banner">
+                    <div class="task-banner-icon">🎁</div>
+                    <div class="task-banner-title">每日签到领红包</div>
+                    <div class="task-banner-desc">连续签到7天，最高可得 ¥28 红包</div>
+                </div>
+                
+                <!-- 签到日历 -->
+                <div class="task-progress-section">
+                    <div class="task-progress-card">
+                        <div class="task-progress-header">
+                            <span class="task-progress-title">📅 本周签到进度</span>
+                            <span class="task-progress-count">已签到 3/7 天</span>
+                        </div>
+                        
+                        <!-- 签到状态 -->
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 16px;">
+                            <div style="text-align:center;flex:1;">
+                                <div style="width:36px;height:36px;background:#34a853;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 4px;color:#fff;font-size:14px;">✓</div>
+                                <div style="font-size:11px;color:#666;">周一</div>
+                            </div>
+                            <div style="text-align:center;flex:1;">
+                                <div style="width:36px;height:36px;background:#34a853;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 4px;color:#fff;font-size:14px;">✓</div>
+                                <div style="font-size:11px;color:#666;">周二</div>
+                            </div>
+                            <div style="text-align:center;flex:1;">
+                                <div style="width:36px;height:36px;background:#34a853;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 4px;color:#fff;font-size:14px;">✓</div>
+                                <div style="font-size:11px;color:#666;">周三</div>
+                            </div>
+                            <div style="text-align:center;flex:1;">
+                                <div style="width:36px;height:36px;background:#1a73e8;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 4px;color:#fff;font-size:14px;">4</div>
+                                <div style="font-size:11px;color:#1a73e8;font-weight:600;">今天</div>
+                            </div>
+                            <div style="text-align:center;flex:1;">
+                                <div style="width:36px;height:36px;background:#e0e0e0;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 4px;color:#999;font-size:14px;">5</div>
+                                <div style="font-size:11px;color:#666;">周四</div>
+                            </div>
+                            <div style="text-align:center;flex:1;">
+                                <div style="width:36px;height:36px;background:#e0e0e0;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 4px;color:#999;font-size:14px;">6</div>
+                                <div style="font-size:11px;color:#666;">周五</div>
+                            </div>
+                            <div style="text-align:center;flex:1;">
+                                <div style="width:36px;height:36px;background:#e0e0e0;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 4px;color:#999;font-size:14px;">7</div>
+                                <div style="font-size:11px;color:#666;">周六</div>
+                            </div>
+                        </div>
+                        
+                        <!-- 今日签到 -->
+                        <div style="background:#fff5f5;border-radius:12px;padding:16px;text-align:center;margin-bottom:12px;">
+                            <div style="font-size:14px;color:#666;margin-bottom:8px;">今日签到红包</div>
+                            <div style="font-size:32px;font-weight:700;color:#f5576c;margin-bottom:8px;">¥3.88</div>
+                            <div style="font-size:12px;color:#999;">+ 连续签到额外奖励 ¥1</div>
+                        </div>
+                        
+                        <button class="task-action-btn">立即签到领取</button>
+                    </div>
+                    
+                    <!-- 奖励规则 -->
+                    <div class="task-progress-card" style="margin-top:12px;">
+                        <div style="font-size:14px;font-weight:600;color:#333;margin-bottom:12px;">📋 签到奖励规则</div>
+                        <div style="font-size:12px;color:#666;line-height:1.8;">
+                            <p>• 每日签到可获得 ¥1-5 随机红包</p>
+                            <p>• 连续签到满3天，额外奖励 ¥5</p>
+                            <p>• 连续签到满7天，额外奖励 ¥15</p>
+                            <p>• 红包将在签到后24小时内到账</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 分享有奖任务 ==================== -->
+    <div id="scene-share" class="scene">
+        <div class="scene-title">分享有奖任务</div>
+        <div class="scene-desc">分享专属链接或海报，好友成功下单即可获得奖励</div>
+        <div class="phone-frame">
+            <div class="phone-notch"></div>
+            <div class="phone-screen">
+                <!-- 页面头部 -->
+                <div class="page-header" onclick="showScene('scene-zone')">
+                    <span class="back-btn">←</span>
+                    <span class="page-title">分享有奖</span>
+                </div>
+                
+                <!-- Banner -->
+                <div class="task-banner">
+                    <div class="task-banner-icon">📤</div>
+                    <div class="task-banner-title">邀请好友赚红包</div>
+                    <div class="task-banner-desc">好友下单最高可获 ¥20/单 奖励</div>
+                </div>
+                
+                <!-- 分享任务 -->
+                <div class="task-progress-section">
+                    <!-- 分享链接 -->
+                    <div class="share-task-card">
+                        <div class="share-task-header">
+                            <div class="share-task-icon">🔗</div>
+                            <div>
+                                <div class="share-task-title">分享专属链接</div>
+                                <div class="share-task-sub">好友通过链接注册并下单</div>
+                            </div>
+                        </div>
+                        <div class="share-task-reward">💰 好友下单奖励：¥10/单</div>
+                        <button class="share-task-btn">复制链接分享</button>
+                    </div>
+                    
+                    <!-- 分享海报 -->
+                    <div class="share-task-card">
+                        <div class="share-task-header">
+                            <div class="share-task-icon">🖼️</div>
+                            <div>
+                                <div class="share-task-title">分享推广海报</div>
+                                <div class="share-task-sub">生成专属推广海报分享到朋友圈</div>
+                            </div>
+                        </div>
+                        <div class="share-task-reward">💰 好友下单奖励：¥15/单</div>
+                        <button class="share-task-btn">生成并分享海报</button>
+                    </div>
+                    
+                    <!-- 价优爆品分享 -->
+                    <div class="share-task-card">
+                        <div class="share-task-header">
+                            <div class="share-task-icon" style="background:linear-gradient(135deg,#ff6b6b,#ee5a24);">🔥</div>
+                            <div>
+                                <div class="share-task-title">分享价优爆品</div>
+                                <div class="share-task-sub">分享高佣金爆品链接给好友</div>
+                            </div>
+                        </div>
+                        <div class="share-task-reward">💰 好友下单奖励：¥20/单 + 额外红包</div>
+                        <button class="share-task-btn">查看爆品清单</button>
+                    </div>
+                    
+                    <!-- 分享数据 -->
+                    <div class="task-progress-card">
+                        <div style="font-size:14px;font-weight:600;color:#333;margin-bottom:12px;">📊 我的分享数据</div>
+                        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center;">
+                            <div>
+                                <div style="font-size:20px;font-weight:700;color:#1a73e8;">12</div>
+                                <div style="font-size:11px;color:#666;">分享次数</div>
+                            </div>
+                            <div>
+                                <div style="font-size:20px;font-weight:700;color:#34a853;">5</div>
+                                <div style="font-size:11px;color:#666;">转化订单</div>
+                            </div>
+                            <div>
+                                <div style="font-size:20px;font-weight:700;color:#f5576c;">¥75</div>
+                                <div style="font-size:11px;color:#666;">已获奖励</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 关注任务 ==================== -->
+    <div id="scene-follow" class="scene">
+        <div class="scene-title">关注任务</div>
+        <div class="scene-desc">添加企微客服，即可加入推手成长营获取更多培训资源</div>
+        <div class="phone-frame">
+            <div class="phone-notch"></div>
+            <div class="phone-screen">
+                <!-- 页面头部 -->
+                <div class="page-header" onclick="showScene('scene-zone')">
+                    <span class="back-btn">←</span>
+                    <span class="page-title">关注任务</span>
+                </div>
+                
+                <!-- Banner -->
+                <div class="task-banner" style="background:linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                    <div class="task-banner-icon">💬</div>
+                    <div class="task-banner-title">加入推手成长营</div>
+                    <div class="task-banner-desc">添加企微客服，获得专属培训+更多活动资格</div>
+                </div>
+                
+                <!-- 关注任务 -->
+                <div class="task-progress-section">
+                    <div class="follow-task-card">
+                        <div class="follow-task-header">
+                            <div class="follow-task-icon">👨‍💼</div>
+                            <div>
+                                <div class="follow-task-title">添加企微客服</div>
+                                <div class="follow-task-sub">扫码添加官方客服企业微信</div>
+                            </div>
+                        </div>
+                        <div class="follow-task-reward">🎁 完成后立即获得 ¥5 红包</div>
+                        <div style="font-size:12px;color:#666;margin-bottom:12px;">+ 入群可获得成长营专属活动资格</div>
+                        <button class="follow-task-btn">👆 扫码添加企微</button>
+                    </div>
+                    
+                    <!-- 二维码区域 -->
+                    <div class="qrcode-section">
+                        <div class="qrcode-box">
+                            [ 二维码区域 ]
+                        </div>
+                        <div class="qrcode-tip">长按识别二维码添加客服</div>
+                    </div>
+                    
+                    <!-- 成长营介绍 -->
+                    <div class="task-progress-card" style="margin-top:12px;">
+                        <div style="font-size:14px;font-weight:600;color:#333;margin-bottom:12px;">🎓 推手成长营福利</div>
+                        <div style="font-size:12px;color:#666;line-height:1.8;">
+                            <p>• 📚 专业培训课程（选品技巧、运营方法）</p>
+                            <p>• 🎯 专属活动资格（提前参与新活动）</p>
+                            <p>• 💰 高佣金商品内部推荐</p>
+                            <p>• 👥 抱团取暖（同行交流群）</p>
+                            <p>• 📈 1V1 运营指导（高级群）</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 个性化活动（复用原有4个Case） ==================== -->
+    <div id="scene-personal" class="scene">
+        <div class="scene-title">个性化让利活动</div>
+        <div class="scene-desc">针对成长期推手的个性化激励方案，点击查看各Case原型</div>
+        
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:20px;">
+            <button class="tab-btn" onclick="showPersonalCase('personal-case1')">Case 1：阶段1刚开始</button>
+            <button class="tab-btn" onclick="showPersonalCase('personal-case2')">Case 2：阶段2进行中</button>
+            <button class="tab-btn" onclick="showPersonalCase('personal-case3')">Case 3：惊喜红包</button>
+            <button class="tab-btn" onclick="showPersonalCase('personal-case4')">Case 4：全部完成</button>
+        </div>
+        
+        <!-- Case 1 -->
+        <div id="personal-case1" class="personal-scene">
+            <div class="scene-title" style="font-size:14px;">Case 1：阶段1刚开始</div>
+            <div class="scene-desc">场景：推手在第1阶段(进行中)，完成率33%（1/3单）</div>
+            <div class="phone-frame" style="min-height:700px;">
+                <div class="phone-notch"></div>
+                <div class="phone-screen">
+                    <div class="page-header" onclick="showScene('scene-zone')">
+                        <span class="back-btn">←</span>
+                        <span class="page-title">成长大礼包</span>
+                    </div>
+                    
+                    <div class="activity-info">
+                        <div class="activity-status">
+                            <span class="status-tag">进行中</span>
+                            <span>剩余时间: 5天12时</span>
+                        </div>
+                        <div class="activity-period">活动时间: 2026.04.01 - 2026.04.30</div>
+                    </div>
+                    
+                    <div class="overall-progress">
+                        <div class="overall-header">
+                            <span class="overall-title">活动进度</span>
+                            <span class="overall-count">1/4 阶段</span>
+                        </div>
+                        <div class="overall-bar">
+                            <div class="overall-fill" style="width: 12.5%;"></div>
+                        </div>
+                        <div class="overall-milestones">
+                            <span>阶段一</span>
+                            <span>阶段二</span>
+                            <span>阶段三</span>
+                            <span>阶段四</span>
+                        </div>
+                    </div>
+                    
+                    <div class="phase-section">
+                        <div class="phase-card completed">
+                            <div class="phase-header">
+                                <span class="phase-icon">✓</span>
+                                <span class="phase-title">阶段一</span>
+                                <span class="phase-period">Day 1-7</span>
+                            </div>
+                            <div class="phase-completed-info">
+                                <span>订单门槛: <span class="value">3单</span></span>
+                                <span>已完成: <span class="value">3单 ✓</span></span>
+                            </div>
+                            <div class="phase-reward">
+                                <span>奖励: <span class="value">1.0元/单</span></span>
+                                <span>已获得: <span class="value">3.0元 ✓</span></span>
+                            </div>
+                        </div>
+                        
+                        <div class="phase-card current">
+                            <div class="phase-header">
+                                <span class="phase-icon">⏳</span>
+                                <span class="phase-title">阶段二</span>
+                                <span class="phase-period">Day 8-14</span>
+                            </div>
+                            <div class="phase-progress-wrap">
+                                <div class="phase-progress-bar">
+                                    <div class="phase-progress-fill" style="width: 33%;"></div>
+                                </div>
+                                <span class="phase-progress-text">1/3 单</span>
+                            </div>
+                            <div class="phase-threshold">
+                                <span class="threshold-label">订单门槛</span>
+                                <span class="threshold-value">3 单</span>
+                            </div>
+                            <div class="phase-expected">
+                                <span class="expected-label">预计奖励</span>
+                                <span class="expected-value">¥3.0</span>
+                            </div>
+                        </div>
+                        
+                        <div class="phase-card locked">
+                            <div class="phase-header">
+                                <span class="phase-icon">🔒</span>
+                                <span class="phase-title">阶段三</span>
+                                <span class="phase-period">Day 15-21</span>
+                            </div>
+                            <div class="phase-locked-content">
+                                <span>需完成阶段二后自动解锁</span>
+                            </div>
+                        </div>
+                        
+                        <div class="phase-card locked">
+                            <div class="phase-header">
+                                <span class="phase-icon">🔒</span>
+                                <span class="phase-title">阶段四</span>
+                                <span class="phase-period">Day 22-28</span>
+                            </div>
+                            <div class="phase-locked-content">
+                                <span>需完成阶段三后自动解锁</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Case 2 -->
+        <div id="personal-case2" class="personal-scene" style="display:none;">
+            <div class="scene-title" style="font-size:14px;">Case 2：阶段2进行中（完成率>50%）</div>
+            <div class="scene-desc">场景：推手在第2阶段，完成率60%（3/5单），>50%时显示第3阶段预览</div>
+            <div class="phone-frame" style="min-height:750px;">
+                <div class="phone-notch"></div>
+                <div class="phone-screen">
+                    <div class="page-header" onclick="showScene('scene-zone')">
+                        <span class="back-btn">←</span>
+                        <span class="page-title">成长大礼包</span>
+                    </div>
+                    
+                    <div class="activity-info">
+                        <div class="activity-status">
+                            <span class="status-tag">进行中</span>
+                            <span>剩余时间: 3天8时</span>
+                        </div>
+                        <div class="activity-period">活动时间: 2026.04.01 - 2026.04.30</div>
+                    </div>
+                    
+                    <div class="overall-progress">
+                        <div class="overall-header">
+                            <span class="overall-title">活动进度</span>
+                            <span class="overall-count">2/4 阶段</span>
+                        </div>
+                        <div class="overall-bar">
+                            <div class="overall-fill" style="width: 37.5%;"></div>
+                        </div>
+                        <div class="overall-milestones">
+                            <span>阶段一</span>
+                            <span>阶段二</span>
+                            <span>阶段三</span>
+                            <span>阶段四</span>
+                        </div>
+                    </div>
+                    
+                    <div class="phase-section">
+                        <div class="phase-card completed">
+                            <div class="phase-header">
+                                <span class="phase-icon">✓</span>
+                                <span class="phase-title">阶段一</span>
+                                <span class="phase-period">Day 1-7</span>
+                            </div>
+                            <div class="phase-completed-info">
+                                <span>订单门槛: <span class="value">3单</span></span>
+                                <span>已完成: <span class="value">3单 ✓</span></span>
+                            </div>
+                            <div class="phase-reward">
+                                <span>奖励: <span class="value">1.0元/单</span></span>
+                                <span>已获得: <span class="value">3.0元 ✓</span></span>
+                            </div>
+                        </div>
+                        
+                        <div class="phase-card current">
+                            <div class="phase-header">
+                                <span class="phase-icon">⏳</span>
+                                <span class="phase-title">阶段二</span>
+                                <span class="phase-period">Day 8-14</span>
+                            </div>
+                            <div class="phase-progress-wrap">
+                                <div class="phase-progress-bar">
+                                    <div class="phase-progress-fill" style="width: 60%;"></div>
+                                </div>
+                                <span class="phase-progress-text">3/5 单</span>
+                            </div>
+                            <div class="phase-threshold">
+                                <span class="threshold-label">订单门槛</span>
+                                <span class="threshold-value">5 单</span>
+                            </div>
+                            <div class="phase-expected">
+                                <span class="expected-label">预计奖励</span>
+                                <span class="expected-value">¥4.5</span>
+                            </div>
+                        </div>
+                        
+                        <div class="phase-card locked">
+                            <div class="phase-header">
+                                <span class="phase-icon">🔒</span>
+                                <span class="phase-title">阶段三</span>
+                                <span class="phase-period">Day 15-21</span>
+                            </div>
+                            <div class="phase-locked-content">
+                                <span>需完成阶段二后自动解锁</span>
+                            </div>
+                        </div>
+                        
+                        <div class="phase-card locked">
+                            <div class="phase-header">
+                                <span class="phase-icon">🔒</span>
+                                <span class="phase-title">阶段四</span>
+                                <span class="phase-period">Day 22-28</span>
+                            </div>
+                            <div class="phase-locked-content">
+                                <span>需完成阶段三后自动解锁</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="next-phase-preview">
+                        <div class="preview-header">
+                            <span class="preview-badge">完成后解锁</span>
+                            <span class="preview-title">阶段三预览</span>
+                        </div>
+                        <div class="preview-content">
+                            <span>订单门槛: <strong>7单</strong></span>
+                            <span>奖励单价: <strong>1.5元/单</strong></span>
+                            <span class="preview-reward">预计 ¥10.5</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Case 3 -->
+        <div id="personal-case3" class="personal-scene" style="display:none;">
+            <div class="scene-title" style="font-size:14px;">Case 3：惊喜红包</div>
+            <div class="scene-desc">场景：推手在第2阶段，完成率40%（2/5单），惊喜红包叠加在进度条上</div>
+            <div class="phone-frame" style="min-height:780px;">
+                <div class="phone-notch"></div>
+                <div class="phone-screen">
+                    <div class="page-header" onclick="showScene('scene-zone')">
+                        <span class="back-btn">←</span>
+                        <span class="page-title">成长大礼包</span>
+                    </div>
+                    
+                    <div class="activity-info">
+                        <div class="activity-status">
+                            <span class="status-tag">进行中</span>
+                            <span>剩余时间: 2天5时</span>
+                        </div>
+                        <div class="activity-period">活动时间: 2026.04.01 - 2026.04.30</div>
+                    </div>
+                    
+                    <div class="overall-progress">
+                        <div class="overall-header">
+                            <span class="overall-title">活动进度</span>
+                            <span class="overall-count">2/4 阶段</span>
+                        </div>
+                        <div class="overall-bar">
+                            <div class="overall-fill" style="width: 37.5%;"></div>
+                        </div>
+                        <div class="overall-milestones">
+                            <span>阶段一</span>
+                            <span>阶段二</span>
+                            <span>阶段三</span>
+                            <span>阶段四</span>
+                        </div>
+                    </div>
+                    
+                    <div class="phase-section">
+                        <div class="phase-card completed">
+                            <div class="phase-header">
+                                <span class="phase-icon">✓</span>
+                                <span class="phase-title">阶段一</span>
+                                <span class="phase-period">Day 1-7</span>
+                            </div>
+                            <div class="phase-completed-info">
+                                <span>订单门槛: <span class="value">3单</span></span>
+                                <span>已完成: <span class="value">3单 ✓</span></span>
+                            </div>
+                            <div class="phase-reward">
+                                <span>奖励: <span class="value">1.0元/单</span></span>
+                                <span>已获得: <span class="value">3.0元 ✓</span></span>
+                            </div>
+                        </div>
+                        
+                        <div class="phase-card current">
+                            <div class="phase-header">
+                                <span class="phase-icon">⏳</span>
+                                <span class="phase-title">阶段二</span>
+                                <span class="phase-period">Day 8-14</span>
+                            </div>
+                            
+                            <div class="surprise-redpacket">
+                                <div class="bar"><div class="fill"></div></div>
+                                <div class="badge">🎁 送你满99-10惊喜红包</div>
+                                <div class="arrow"></div>
+                            </div>
+                            <div class="phase-progress-text" style="margin-bottom:10px;">2/5 单</div>
+                            
+                            <div class="phase-threshold">
+                                <span class="threshold-label">订单门槛</span>
+                                <span class="threshold-value">5 单</span>
+                            </div>
+                            <div class="phase-expected">
+                                <span class="expected-label">预计奖励</span>
+                                <span class="expected-value">¥3.0</span>
+                            </div>
+                            
+                            <div class="redpacket-tip">
+                                <span>💪</span>
+                                <span>冲鸭！红包已到账，再冲一波更大惊喜等你拿！</span>
+                            </div>
+                        </div>
+                        
+                        <div class="phase-card locked">
+                            <div class="phase-header">
+                                <span class="phase-icon">🔒</span>
+                                <span class="phase-title">阶段三</span>
+                                <span class="phase-period">Day 15-21</span>
+                            </div>
+                            <div class="phase-locked-content">
+                                <span>需完成阶段二后自动解锁</span>
+                            </div>
+                        </div>
+                        
+                        <div class="phase-card locked">
+                            <div class="phase-header">
+                                <span class="phase-icon">🔒</span>
+                                <span class="phase-title">阶段四</span>
+                                <span class="phase-period">Day 22-28</span>
+                            </div>
+                            <div class="phase-locked-content">
+                                <span>需完成阶段三后自动解锁</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Case 4 -->
+        <div id="personal-case4" class="personal-scene" style="display:none;">
+            <div class="scene-title" style="font-size:14px;">Case 4：全部完成</div>
+            <div class="scene-desc">场景：推手完成了全部4个阶段，展示活动期间的成长情况</div>
+            <div class="phone-frame" style="min-height:750px;">
+                <div class="phone-notch"></div>
+                <div class="phone-screen">
+                    <div class="completion-header">
+                        <div class="completion-icon">🏆</div>
+                        <div class="completion-title">恭喜全部完成！</div>
+                        <div class="completion-sub">您已完成本次推手激励活动全部阶段</div>
+                    </div>
+                    
+                    <div class="growth-stats">
+                        <div class="growth-item">
+                            <div class="growth-value">28</div>
+                            <div class="growth-label">累计订单</div>
+                            <div class="growth-trend">↑ 较上月 +40%</div>
+                        </div>
+                        <div class="growth-item">
+                            <div class="growth-value">¥5,600</div>
+                            <div class="growth-label">累计销售额</div>
+                            <div class="growth-trend">↑ 较上月 +35%</div>
+                        </div>
+                        <div class="growth-item">
+                            <div class="growth-value">¥56.0</div>
+                            <div class="growth-label">活动奖励</div>
+                            <div class="growth-trend">✅ 已发放</div>
+                        </div>
+                        <div class="growth-item">
+                            <div class="growth-value">Lv.3</div>
+                            <div class="growth-label">当前等级</div>
+                            <div class="growth-trend">↑ 已提升2级</div>
+                        </div>
+                    </div>
+                    
+                    <div class="level-up">
+                        <div class="level-badge">Lv.1</div>
+                        <span style="font-size:24px;color:#e17055;">→</span>
+                        <div class="level-badge" style="background:#1a73e8;color:#fff;">Lv.3</div>
+                        <span style="font-size:13px;color:#333;margin-left:8px;">等级飙升！</span>
+                    </div>
+                    
+                    <div class="timeline">
+                        <div class="timeline-title">📊 各阶段完成情况</div>
+                        <div class="timeline-item">
+                            <div class="timeline-dot">✓</div>
+                            <div class="timeline-content">
+                                <div class="timeline-label">阶段一 · 3单</div>
+                                <div class="timeline-value">奖励 ¥3.0 · Day 1-7</div>
+                            </div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-dot">✓</div>
+                            <div class="timeline-content">
+                                <div class="timeline-label">阶段二 · 5单</div>
+                                <div class="timeline-value">奖励 ¥7.5 · Day 8-14</div>
+                            </div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-dot">✓</div>
+                            <div class="timeline-content">
+                                <div class="timeline-label">阶段三 · 8单</div>
+                                <div class="timeline-value">奖励 ¥12.0 · Day 15-21</div>
+                            </div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-dot">✓</div>
+                            <div class="timeline-content">
+                                <div class="timeline-label">阶段四 · 12单</div>
+                                <div class="timeline-value">奖励 ¥18.0 · Day 22-28</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="total-reward">
+                        <span class="total-reward-label">🎉 活动总奖励</span>
+                        <span class="total-reward-value">¥56.0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showScene(sceneId) {
+            // 隐藏所有场景
+            document.querySelectorAll('.scene').forEach(scene => {
+                scene.classList.remove('active');
+            });
+            // 移除所有tab激活状态
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            // 显示目标场景
+            document.getElementById(sceneId).classList.add('active');
+            // 激活对应tab
+            if (event && event.target) {
+                event.target.classList.add('active');
+            }
+        }
+        
+        function showPersonalCase(caseId) {
+            // 隐藏所有个性化Case
+            document.querySelectorAll('.personal-scene').forEach(scene => {
+                scene.style.display = 'none';
+            });
+            // 显示目标Case
+            document.getElementById(caseId).style.display = 'block';
+        }
+        
+        function toggleCreateForm() {
+            var form = document.getElementById('create-form');
+            if (form.style.display === 'none' || form.style.display === '') {
+                form.style.display = 'block';
+            } else {
+                form.style.display = 'none';
+            }
+        }
+        
+        // 页面加载时检查URL参数，跳转到对应tab
+        window.addEventListener('load', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const tab = urlParams.get('tab');
+            if (tab === 'personal') {
+                // 跳转到个性化活动tab
+                const personalBtn = document.querySelector('.tab-btn[onclick*="scene-personal"]');
+                if (personalBtn) {
+                    personalBtn.click();
+                } else {
+                    showScene('scene-personal');
+                }
+            }
+        });
+    </script>
+
+    <!-- ==================== 专区管理 ==================== -->
+    <div id="scene-zone-admin" class="scene">
+        <div class="scene-title">专区管理 - 创建与管理</div>
+        <div class="scene-desc">配置推手活动专区，包含来访签到、分享有奖、关注任务等子活动的管理</div>
+        
+        <div class="admin-panel" style="max-width: 1000px;">
+            <!-- 数据概览 -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">¥128.5K</div>
+                    <div class="stat-label">累计奖励发放</div>
+                </div>
+                <div class="stat-card success">
+                    <div class="stat-value">1,258</div>
+                    <div class="stat-label">活跃推手</div>
+                </div>
+                <div class="stat-card warning">
+                    <div class="stat-value">68%</div>
+                    <div class="stat-label">任务完成率</div>
+                </div>
+                <div class="stat-card orange">
+                    <div class="stat-value">¥15.8K</div>
+                    <div class="stat-label">月度预算</div>
+                </div>
+            </div>
+            
+            <!-- 专区配置 -->
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                <h3 style="font-size:16px;font-weight:600;">📋 专区配置</h3>
+                <button class="btn btn-primary">+ 新建专区</button>
+            </div>
+            
+            <!-- 专区卡片 -->
+            <div class="zone-config-card">
+                <div class="zone-config-header">
+                    <div class="zone-config-title">
+                        <span>🎯</span>
+                        <span>成长期推手专区</span>
+                        <span class="status-badge status-active">进行中</span>
+                    </div>
+                    <div class="zone-config-switch active"></div>
+                </div>
+                <div style="font-size:13px;color:#666;margin-bottom:12px;">
+                    活动时间：2026.04.01 - 2026.04.30 | 目标人群：近180天未出单推手
+                </div>
+                <div class="zone-task-list">
+                    <div style="font-size:12px;color:#666;margin-bottom:8px;font-weight:600;">已配置任务：</div>
+                    <div class="zone-task-item">
+                        <div class="zone-task-check checked">✓</div>
+                        <span>📅 来访签到任务</span>
+                        <span style="margin-left:auto;color:#34a853;">¥5,280 已发放</span>
+                    </div>
+                    <div class="zone-task-item">
+                        <div class="zone-task-check checked">✓</div>
+                        <span>🚀 分享有奖任务</span>
+                        <span style="margin-left:auto;color:#34a853;">¥8,920 已发放</span>
+                    </div>
+                    <div class="zone-task-item">
+                        <div class="zone-task-check checked">✓</div>
+                        <span>💬 关注任务（企微）</span>
+                        <span style="margin-left:auto;color:#34a853;">¥1,580 已发放</span>
+                    </div>
+                    <div class="zone-task-item">
+                        <div class="zone-task-check checked">✓</div>
+                        <span>🎯 个性化让利活动</span>
+                        <span style="margin-left:auto;color:#34a853;">¥12,720 已发放</span>
+                    </div>
+                </div>
+                <div style="display:flex;gap:8px;margin-top:12px;">
+                    <button class="btn btn-sm btn-info">编辑配置</button>
+                    <button class="btn btn-sm" style="background:#f0f0f0;color:#666;">查看数据</button>
+                </div>
+            </div>
+            
+            <!-- 子活动列表 -->
+            <h3 style="font-size:16px;font-weight:600;margin:24px 0 16px;">📋 子活动管理</h3>
+            <div class="filter-tabs">
+                <button class="filter-tab active">全部 (4)</button>
+                <button class="filter-tab">进行中 (2)</button>
+                <button class="filter-tab">未开始 (1)</button>
+                <button class="filter-tab">已结束 (1)</button>
+            </div>
+            
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>活动名称</th>
+                        <th>类型</th>
+                        <th>参与人数</th>
+                        <th>完成率</th>
+                        <th>奖励发放</th>
+                        <th>状态</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>每日签到有礼</td>
+                        <td>来访签到</td>
+                        <td>892</td>
+                        <td>72%</td>
+                        <td>¥5,280</td>
+                        <td><span class="status-badge status-active">进行中</span></td>
+                        <td>
+                            <div class="action-btns">
+                                <button class="btn-sm btn-info">编辑</button>
+                                <button class="btn-sm btn-danger">关闭</button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>分享有奖</td>
+                        <td>分享任务</td>
+                        <td>568</td>
+                        <td>85%</td>
+                        <td>¥8,920</td>
+                        <td><span class="status-badge status-active">进行中</span></td>
+                        <td>
+                            <div class="action-btns">
+                                <button class="btn-sm btn-info">编辑</button>
+                                <button class="btn-sm btn-danger">关闭</button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>添加企微好友</td>
+                        <td>关注任务</td>
+                        <td>316</td>
+                        <td>65%</td>
+                        <td>¥1,580</td>
+                        <td><span class="status-badge status-pending">未开始</span></td>
+                        <td>
+                            <div class="action-btns">
+                                <button class="btn-sm btn-info">编辑</button>
+                                <button class="btn-sm btn-danger">删除</button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>成长大礼包</td>
+                        <td>个性化活动</td>
+                        <td>1,258</td>
+                        <td>45%</td>
+                        <td>¥12,720</td>
+                        <td><span class="status-badge status-active">进行中</span></td>
+                        <td>
+                            <div class="action-btns">
+                                <button class="btn-sm btn-info">编辑</button>
+                                <button class="btn-sm btn-info">查看详情</button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ==================== 个性化活动管理 ==================== -->
+    <div id="scene-personal-admin" class="scene">
+        <div class="scene-title">个性化让利活动 - 创建与管理</div>
+        <div class="scene-desc">创建和管理针对成长期推手的个性化让利活动，配置阶段奖励规则</div>
+        
+        <div class="admin-panel" style="max-width: 1000px;">
+            <!-- 数据概览 -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">¥168.5K</div>
+                    <div class="stat-label">累计GMV</div>
+                </div>
+                <div class="stat-card success">
+                    <div class="stat-value">285%</div>
+                    <div class="stat-label">平均ROI</div>
+                </div>
+                <div class="stat-card warning">
+                    <div class="stat-value">1,258</div>
+                    <div class="stat-label">参与推手</div>
+                </div>
+                <div class="stat-card orange">
+                    <div class="stat-value">68%</div>
+                    <div class="stat-label">预算消耗</div>
+                </div>
+            </div>
+            
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                <h3 style="font-size:16px;font-weight:600;">📋 活动列表</h3>
+                <button class="btn btn-primary" onclick="toggleCreateForm()">+ 创建活动</button>
+            </div>
+            
+            <!-- 筛选 -->
+            <div class="filter-tabs">
+                <button class="filter-tab active">全部 (5)</button>
+                <button class="filter-tab">进行中 (2)</button>
+                <button class="filter-tab">未开始 (1)</button>
+                <button class="filter-tab">已结束 (2)</button>
+            </div>
+            
+            <!-- 活动列表 -->
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>活动名称</th>
+                        <th>类型</th>
+                        <th>周期</th>
+                        <th>参与人数</th>
+                        <th>达标率</th>
+                        <th>ROI</th>
+                        <th>预算消耗</th>
+                        <th>状态</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>2024年Q2成长大礼包</td>
+                        <td>层级活动</td>
+                        <td>04.01-04.28</td>
+                        <td>1,258</td>
+                        <td>72%</td>
+                        <td>285%</td>
+                        <td>
+                            <span class="progress-bar-mini"><span class="progress-bar-mini-fill" style="width:68%;"></span></span>
+                            68%
+                        </td>
+                        <td><span class="status-badge status-active">进行中</span></td>
+                        <td>
+                            <div class="action-btns">
+                                <button class="btn-sm btn-info">详情</button>
+                                <button class="btn-sm btn-danger">结束</button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>3月冲刺挑战赛</td>
+                        <td>挑战赛</td>
+                        <td>03.01-03.31</td>
+                        <td>892</td>
+                        <td>65%</td>
+                        <td>320%</td>
+                        <td>
+                            <span class="progress-bar-mini"><span class="progress-bar-mini-fill" style="width:100%;"></span></span>
+                            100%
+                        </td>
+                        <td><span class="status-badge status-ended">已结束</span></td>
+                        <td>
+                            <div class="action-btns">
+                                <button class="btn-sm btn-info">详情</button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>新推手成长计划</td>
+                        <td>成长激励</td>
+                        <td>04.15-05.15</td>
+                        <td>456</td>
+                        <td>-</td>
+                        <td>-</td>
+                        <td>
+                            <span class="progress-bar-mini"><span class="progress-bar-mini-fill" style="width:0%;"></span></span>
+                            0%
+                        </td>
+                        <td><span class="status-badge status-pending">未开始</span></td>
+                        <td>
+                            <div class="action-btns">
+                                <button class="btn-sm btn-info">编辑</button>
+                                <button class="btn-sm btn-danger">删除</button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <!-- 创建活动表单 -->
+            <div id="create-form" style="margin-top:32px;">
+                <h3 style="font-size:16px;font-weight:600;margin-bottom:16px;">➕ 创建新活动</h3>
+                
+                <form>
+                    <!-- 基本信息 -->
+                    <div class="form-section">
+                        <div class="form-section-title">📋 活动基本信息</div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">活动名称</label>
+                                <input type="text" class="form-input" placeholder="请输入活动名称">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">活动类型</label>
+                                <select class="form-select">
+                                    <option value="">请选择活动类型</option>
+                                    <option value="growth">成长激励活动</option>
+                                    <option value="hierarchical" selected>层级活动</option>
+                                    <option value="challenge">挑战赛</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">开始时间</label>
+                                <input type="date" class="form-input" value="2026-04-01">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">结束时间</label>
+                                <input type="date" class="form-input" value="2026-04-28">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">目标人群</label>
+                            <select class="form-select">
+                                <option value="">全部推手</option>
+                                <option value="new">新推手（注册30天内）</option>
+                                <option value="decay" selected>衰退推手（近180天未出单）</option>
+                                <option value="low">低活跃推手（月订单≤6单）</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- 阶段配置 -->
+                    <div class="form-section">
+                        <div class="form-section-title">🎯 阶段配置</div>
+                        <div style="font-size:12px;color:#666;margin-bottom:16px;">设置每个阶段的订单门槛和奖励单价，完成对应订单数即可获得奖励</div>
+                        
+                        <!-- 阶段1 -->
+                        <div class="zone-config-card" style="margin-bottom:12px;">
+                            <div style="font-size:14px;font-weight:600;color:#667eea;margin-bottom:4px;">第1阶段</div>
+                            <div style="font-size:12px;color:#666;margin-bottom:12px;">Day 1-7</div>
+                            <div class="form-row" style="gap:24px;">
+                                <div class="form-group">
+                                    <label class="form-label">订单门槛（单）</label>
+                                    <input type="number" class="form-input" value="3">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">奖励单价（元/单）</label>
+                                    <input type="number" class="form-input" value="1.0" step="0.1">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 阶段2 -->
+                        <div class="zone-config-card" style="margin-bottom:12px;">
+                            <div style="font-size:14px;font-weight:600;color:#667eea;margin-bottom:4px;">第2阶段</div>
+                            <div style="font-size:12px;color:#666;margin-bottom:12px;">Day 8-14</div>
+                            <div class="form-row" style="gap:24px;">
+                                <div class="form-group">
+                                    <label class="form-label">订单门槛（单）</label>
+                                    <input type="number" class="form-input" value="5">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">奖励单价（元/单）</label>
+                                    <input type="number" class="form-input" value="1.5" step="0.1">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 阶段3 -->
+                        <div class="zone-config-card" style="margin-bottom:12px;">
+                            <div style="font-size:14px;font-weight:600;color:#667eea;margin-bottom:4px;">第3阶段</div>
+                            <div style="font-size:12px;color:#666;margin-bottom:12px;">Day 15-21</div>
+                            <div class="form-row" style="gap:24px;">
+                                <div class="form-group">
+                                    <label class="form-label">订单门槛（单）</label>
+                                    <input type="number" class="form-input" value="8">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">奖励单价（元/单）</label>
+                                    <input type="number" class="form-input" value="1.5" step="0.1">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 阶段4 -->
+                        <div class="zone-config-card" style="margin-bottom:12px;">
+                            <div style="font-size:14px;font-weight:600;color:#667eea;margin-bottom:4px;">第4阶段</div>
+                            <div style="font-size:12px;color:#666;margin-bottom:12px;">Day 22-28</div>
+                            <div class="form-row" style="gap:24px;">
+                                <div class="form-group">
+                                    <label class="form-label">订单门槛（单）</label>
+                                    <input type="number" class="form-input" value="12">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">奖励单价（元/单）</label>
+                                    <input type="number" class="form-input" value="1.5" step="0.1">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 惊喜红包规则 -->
+                    <div class="form-section">
+                        <div class="form-section-title">🎁 惊喜红包规则</div>
+                        <div style="background:#fff;border:1px solid #ffebee;border-radius:12px;padding:16px;">
+                            <div style="font-size:13px;font-weight:600;color:#c62828;margin-bottom:12px;display:flex;align-items:center;gap:6px;">
+                                ⚡ 触发条件配置
+                            </div>
+                            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;">
+                                <div>
+                                    <label class="form-label" style="text-align:center;">预算金额</label>
+                                    <input type="number" class="form-input" value="10000" style="text-align:center;">
+                                </div>
+                                <div>
+                                    <label class="form-label" style="text-align:center;">红包最小值</label>
+                                    <input type="number" class="form-input" value="9" style="text-align:center;">
+                                </div>
+                                <div>
+                                    <label class="form-label" style="text-align:center;">红包最大值</label>
+                                    <input type="number" class="form-input" value="10" style="text-align:center;">
+                                </div>
+                                <div>
+                                    <label class="form-label" style="text-align:center;">预期完成率</label>
+                                    <input type="number" class="form-input" value="60" placeholder="60" style="text-align:center;">
+                                </div>
+                            </div>
+                            <div style="font-size:12px;color:#666;margin-top:12px;text-align:center;">
+                                当推手当前阶段完成率低于预期时，自动发放惊喜红包
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 操作按钮 -->
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-primary">创建活动</button>
+                        <button type="button" class="btn" style="background:#f0f0f0;color:#666;">保存草稿</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
