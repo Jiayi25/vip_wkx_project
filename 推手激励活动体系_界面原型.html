@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>推手激励活动体系 - 界面原型</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; padding: 20px; }
+        
+        /* Tab导航 */
+        .tab-nav { display: flex; gap: 10px; margin-bottom: 20px; background: #fff; padding: 15px 20px; border-radius: 12px; flex-wrap: wrap; }
+        .tab-btn { padding: 10px 20px; border: none; background: #f0f0f0; border-radius: 8px; cursor: pointer; font-size: 14px; transition: all 0.3s; }
+        .tab-btn.active { background: #1a73e8; color: #fff; }
+        
+        /* 场景容器 */
+        .scene { display: none; background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .scene.active { display: block; }
+        .scene-title { font-size: 16px; font-weight: 600; color: #333; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #1a73e8; }
+        .scene-desc { font-size: 13px; color: #666; margin-bottom: 15px; background: #f8f9fa; padding: 10px; border-radius: 8px; }
+        
+        /* 手机模拟器 */
+        .phone-frame { width: 375px; min-height: 800px; margin: 0 auto; background: #fff; border-radius: 40px; padding: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); position: relative; overflow: hidden; }
+        .phone-notch { width: 150px; height: 30px; background: #000; border-radius: 0 0 20px 20px; position: absolute; top: 0; left: 50%; transform: translateX(-50%); z-index: 10; }
+        .phone-screen { padding-top: 30px; height: 100%; overflow-y: auto; }
+        
+        /* 通用卡片样式 */
+        .card { background: #fff; border-radius: 16px; padding: 16px; margin-bottom: 12px; }
+        
+        /* ==================== 页面头部 ==================== */
+        .page-header { display: flex; align-items: center; padding: 12px 16px; background: #fff; border-bottom: 1px solid #f0f0f0; }
+        .back-btn { font-size: 20px; color: #333; margin-right: 12px; }
+        .page-title { font-size: 17px; font-weight: 600; color: #333; }
+        
+        /* 活动信息头部 */
+        .activity-info { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 16px; color: #fff; }
+        .activity-status { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 13px; }
+        .status-tag { background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 12px; }
+        .activity-period { opacity: 0.9; font-size: 12px; }
+        
+        /* 整体进度条 */
+        .overall-progress { background: #fff; border-radius: 16px; padding: 16px; margin: 12px 16px; }
+        .overall-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .overall-title { font-size: 13px; color: #666; }
+        .overall-count { font-size: 13px; color: #1a73e8; font-weight: 600; }
+        .overall-bar { height: 8px; background: #f0f0f0; border-radius: 4px; position: relative; }
+        .overall-fill { height: 100%; background: linear-gradient(90deg, #1a73e8, #6c5ce7); border-radius: 4px; transition: width 0.5s; }
+        .overall-milestones { display: flex; justify-content: space-between; margin-top: 8px; font-size: 10px; color: #999; }
+        
+        /* ==================== 阶段卡片样式 ==================== */
+        .phase-section { padding: 0 16px; }
+        .phase-card { border: 1px solid #e8e8e8; border-radius: 12px; padding: 14px; margin-bottom: 10px; position: relative; }
+        .phase-card.completed { border-color: #34a853; background: #f8fff8; }
+        .phase-card.current { border-color: #1a73e8; background: #f0f5ff; }
+        .phase-card.locked { border-color: #e0e0e0; background: #fafafa; }
+        
+        .phase-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+        .phase-icon { font-size: 18px; }
+        .phase-title { font-size: 14px; font-weight: 600; color: #333; }
+        .phase-period { font-size: 11px; color: #999; margin-left: auto; }
+        
+        /* 已完成阶段 */
+        .phase-completed-info { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 12px; color: #666; }
+        .phase-completed-info .value { color: #34a853; font-weight: 600; }
+        .phase-reward { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #666; }
+        .phase-reward .value { color: #f5576c; font-weight: 600; }
+        
+        /* 当前进行中阶段 */
+        .phase-progress-wrap { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        .phase-progress-bar { flex: 1; height: 8px; background: #e0e0e0; border-radius: 4px; overflow: hidden; }
+        .phase-progress-fill { height: 100%; background: linear-gradient(90deg, #1a73e8, #6c5ce7); border-radius: 4px; }
+        .phase-progress-text { font-size: 12px; color: #666; white-space: nowrap; }
+        
+        .phase-threshold { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: rgba(26,115,232,0.08); border-radius: 8px; margin-bottom: 8px; }
+        .threshold-label { font-size: 12px; color: #666; }
+        .threshold-value { font-size: 14px; font-weight: 600; color: #1a73e8; }
+        
+        .phase-expected { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border-radius: 8px; color: #fff; }
+        .expected-label { font-size: 12px; }
+        .expected-value { font-size: 16px; font-weight: 700; }
+        
+        /* 惊喜红包气泡 */
+        .surprise-badge { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%); color: #fff; padding: 8px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; box-shadow: 0 4px 12px rgba(238,90,36,0.4); animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { transform: translateY(-50%) scale(1); } 50% { transform: translateY(-50%) scale(1.05); } }
+        
+        /* 惊喜红包提示 */
+        .surprise-tip { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: #fff5f5; border-radius: 8px; font-size: 12px; color: #ee5a24; margin: 10px 16px 0; }
+        
+        /* 锁定阶段 */
+        .phase-locked-content { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #999; }
+        .lock-icon { font-size: 14px; }
+        
+        /* 下阶段预览 */
+        .next-phase-preview { border: 2px dashed #34a853; background: #f8fff8; margin: 10px 16px; border-radius: 12px; padding: 14px; }
+        .preview-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+        .preview-badge { background: #34a853; color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 4px; }
+        .preview-title { font-size: 13px; color: #34a853; font-weight: 500; }
+        .preview-content { display: flex; justify-content: space-between; font-size: 12px; color: #666; }
+        .preview-reward { color: #34a853; font-weight: 600; }
+        
+        /* 活动规则 */
+        .activity-rules { padding: 16px; }
+        .rules-title { font-size: 14px; font-weight: 600; color: #333; margin-bottom: 12px; }
+        .rules-list { list-style: none; }
+        .rules-list li { font-size: 12px; color: #666; line-height: 1.8; padding-left: 16px; position: relative; margin-bottom: 6px; }
+        .rules-list li::before { content: '•'; position: absolute; left: 0; color: #1a73e8; }
+        
+        /* 奖励预估 */
+        .reward-estimate { padding: 16px; }
+        .estimate-title { font-size: 14px; font-weight: 600; color: #333; margin-bottom: 12px; }
+        .estimate-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 10px; }
+        .estimate-item { text-align: center; padding: 10px 6px; background: #f8f9fa; border-radius: 8px; font-size: 11px; }
+        .estimate-item.completed { background: #e8f5e9; }
+        .estimate-item.current { background: #e3f2fd; }
+        .estimate-phase { color: #999; margin-bottom: 4px; }
+        .estimate-amount { font-size: 14px; font-weight: 600; color: #333; }
+        .estimate-item.completed .estimate-amount { color: #34a853; }
+        .estimate-item.current .estimate-amount { color: #1a73e8; }
+        .estimate-total { text-align: center; padding: 12px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border-radius: 8px; color: #fff; }
+        .total-label { font-size: 12px; }
+        .total-value { font-size: 18px; font-weight: 700; }
+        
+        /* ==================== Case4: 全部完成 ==================== */
+        .completion-header { text-align: center; padding: 24px 16px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; margin-bottom: 16px; }
+        .completion-icon { font-size: 56px; margin-bottom: 12px; }
+        .completion-title { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+        .completion-sub { font-size: 13px; opacity: 0.9; }
+        
+        /* 惊喜红包呼吸动画 */
+        @keyframes floatBounce {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(-6px); }
+        }
+        .surprise-float {
+            animation: floatBounce 2s ease-in-out infinite;
+        }
+        
+        .growth-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 0 16px; margin-bottom: 16px; }
+        .growth-item { background: #f8f9fa; padding: 14px; border-radius: 12px; text-align: center; }
+        .growth-value { font-size: 20px; font-weight: 700; color: #1a73e8; margin-bottom: 4px; }
+        .growth-label { font-size: 11px; color: #666; }
+        .growth-trend { font-size: 11px; color: #34a853; margin-top: 4px; }
+        
+        .level-up { display: flex; align-items: center; justify-content: center; gap: 16px; padding: 16px; background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%); border-radius: 12px; margin: 0 16px 16px; }
+        .level-badge { width: 56px; height: 56px; background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: #333; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .level-arrow { font-size: 24px; color: #e17055; }
+        
+        .timeline { padding: 16px; background: #f8f9fa; border-radius: 12px; margin: 0 16px; }
+        .timeline-title { font-size: 14px; font-weight: 600; color: #333; margin-bottom: 14px; }
+        .timeline-item { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+        .timeline-item:last-child { margin-bottom: 0; }
+        .timeline-dot { width: 28px; height: 28px; background: #34a853; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 13px; }
+        .timeline-content { flex: 1; }
+        .timeline-label { font-size: 13px; color: #333; font-weight: 500; }
+        .timeline-value { font-size: 12px; color: #666; }
+        
+        .total-reward { display: flex; justify-content: space-between; align-items: center; padding: 16px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border-radius: 12px; color: #fff; margin: 16px; }
+        .total-reward-label { font-size: 14px; }
+        .total-reward-value { font-size: 24px; font-weight: 700; }
+        
+        /* ==================== 运营后台样式 ==================== */
+        .admin-panel { background: #fff; border-radius: 12px; padding: 20px; }
+        .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .admin-title { font-size: 18px; font-weight: 600; }
+        .btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; transition: all 0.3s; }
+        .btn-primary { background: #1a73e8; color: #fff; }
+        .btn-primary:hover { background: #1557b0; }
+        
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; }
+        .stat-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 12px; color: #fff; }
+        .stat-value { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+        .stat-label { font-size: 12px; opacity: 0.9; }
+        .stat-card.warning { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .stat-card.success { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
+        .stat-card.orange { background: linear-gradient(135deg, #f12711 0%, #f5af19 100%); }
+        
+        .section-title { font-size: 16px; font-weight: 600; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid #e8e8e8; }
+        
+        .form-section { background: #f8f9fa; padding: 20px; border-radius: 12px; margin-bottom: 16px; }
+        .form-section-title { font-size: 14px; font-weight: 600; color: #333; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+        .form-row { display: flex; gap: 16px; margin-bottom: 16px; }
+        .form-group { flex: 1; }
+        .form-label { display: block; font-size: 13px; color: #666; margin-bottom: 6px; }
+        .form-input, .form-select { width: 100%; padding: 10px 12px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; }
+        
+        .phase-config { background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+        .phase-config-title { font-size: 14px; font-weight: 600; color: #1a73e8; margin-bottom: 4px; }
+        .phase-config-desc { font-size: 12px; color: #666; margin-bottom: 12px; }
+        .two-col-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .phase-input-group { }
+        .phase-input-label { font-size: 12px; color: #666; margin-bottom: 4px; }
+        .phase-input { width: 100%; padding: 8px 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 13px; }
+        
+        .redpacket-rule { background: #fff5f5; border: 1px solid #ffebee; border-radius: 12px; padding: 16px; }
+        .redpacket-title { font-size: 13px; font-weight: 600; color: #c62828; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+        .redpacket-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+        .redpacket-item { text-align: center; }
+        .redpacket-item .form-label { text-align: center; }
+        
+        /* 活动列表 */
+        .filter-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+        .filter-tab { padding: 8px 16px; background: #f0f0f0; border: none; border-radius: 20px; font-size: 13px; cursor: pointer; }
+        .filter-tab.active { background: #1a73e8; color: #fff; }
+        
+        .table { width: 100%; border-collapse: collapse; }
+        .table th, .table td { padding: 12px 8px; text-align: left; border-bottom: 1px solid #e8e8e8; font-size: 13px; }
+        .table th { background: #f8f9fa; font-weight: 600; color: #666; }
+        .status-badge { padding: 4px 10px; border-radius: 12px; font-size: 11px; }
+        .status-active { background: #e8f5e9; color: #2e7d32; }
+        .status-pending { background: #fff3e0; color: #e65100; }
+        .status-ended { background: #f5f5f5; color: #9e9e9e; }
+        .progress-bar-mini { width: 80px; height: 6px; background: #f0f0f0; border-radius: 3px; display: inline-block; vertical-align: middle; margin-right: 6px; }
+        .progress-bar-mini-fill { height: 100%; background: #1a73e8; border-radius: 3px; }
+        
+        /* 预算管理 */
+        .budget-row { display: grid; grid-template-columns: 2fr 1fr 2fr 1fr 1fr; gap: 16px; align-items: center; padding: 16px; background: #f8f9fa; border-radius: 8px; margin-bottom: 8px; }
+        .budget-type { font-size: 14px; font-weight: 500; color: #333; }
+        .budget-amount { font-size: 16px; font-weight: 600; color: #333; }
+        .budget-progress { height: 8px; background: #e0e0e0; border-radius: 4px; overflow: hidden; }
+        .budget-progress-fill { height: 100%; border-radius: 4px; }
+        .budget-percent { font-size: 14px; font-weight: 600; }
+        .budget-status { padding: 4px 10px; border-radius: 12px; font-size: 11px; display: inline-block; }
+        
+        .action-btns { display: flex; gap: 8px; }
+        .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 6px; border: none; cursor: pointer; }
+        .btn-info { background: #e3f2fd; color: #1565c0; }
+        .btn-danger { background: #ffebee; color: #c62828; }
+        
+        .form-actions { display: flex; gap: 12px; justify-content: center; margin-top: 24px; padding-top: 20px; border-top: 1px solid #e8e8e8; }
+    </style>
+</head>
+<body>
+    <!-- Tab导航 -->
+    <div class="tab-nav">
+        <button class="tab-btn active" onclick="showScene('scene1')">Case 1：阶段1刚开始</button>
+        <button class="tab-btn" onclick="showScene('scene2')">Case 2：阶段2进行中</button>
+        <button class="tab-btn" onclick="showScene('scene3')">Case 3：惊喜红包</button>
+        <button class="tab-btn" onclick="showScene('scene4')">Case 4：全部完成</button>
+        <button class="tab-btn" onclick="showScene('admin-create')">运营-创建活动</button>
+        <button class="tab-btn" onclick="showScene('admin-list')">运营-活动列表</button>
+        <button class="tab-btn" onclick="showScene('admin-budget')">运营-预算管理</button>
+    </div>
+
+    <!-- Case 1：阶段1刚开始 -->
+    <div id="scene1" class="scene active">
+        <div class="scene-title">Case 1：阶段1刚开始</div>
+        <div class="scene-desc">场景说明：推手在第1阶段(进行中)，完成率33%（1/3单）</div>
+        <div class="phone-frame">
+            <div class="phone-notch"></div>
+            <div class="phone-screen">
+                <!-- 页面头部 -->
+                <div class="page-header">
+                    <span class="back-btn">←</span>
+                    <span class="page-title">成长大礼包</span>
+                </div>
+                
+                <!-- 活动信息 -->
+                <div class="activity-info">
+                    <div class="activity-status">
+                        <span class="status-tag">进行中</span>
+                        <span>剩余时间: 5天12时</span>
+                    </div>
+                    <div class="activity-period">活动时间: 2026.04.01 - 2026.04.30</div>
+                </div>
+                
+                <!-- 整体进度条 -->
+                <div class="overall-progress">
+                    <div class="overall-header">
+                        <span class="overall-title">活动进度</span>
+                        <span class="overall-count">1/4 阶段</span>
+                    </div>
+                    <div class="overall-bar">
+                        <div class="overall-fill" style="width: 12.5%;"></div>
+                    </div>
+                    <div class="overall-milestones">
+                        <span>阶段一</span>
+                        <span>阶段二</span>
+                        <span>阶段三</span>
+                        <span>阶段四</span>
+                    </div>
+                </div>
+                
+                <!-- 阶段卡片 -->
+                <div class="phase-section">
+                    <!-- 已完成阶段1 -->
+                    <div class="phase-card completed">
+                        <div class="phase-header">
+                            <span class="phase-icon">✓</span>
+                            <span class="phase-title">阶段一</span>
+                            <span class="phase-period">Day 1-7</span>
+                        </div>
+                        <div class="phase-completed-info">
+                            <span>订单门槛: <span class="value">3单</span></span>
+                            <span>已完成: <span class="value">3单 ✓</span></span>
+                        </div>
+                        <div class="phase-reward">
+                            <span>奖励: <span class="value">1.0元/单</span></span>
+                            <span>已获得: <span class="value">3.0元 ✓</span></span>
+                        </div>
+                    </div>
+                    
+                    <!-- 当前进行中阶段2 -->
+                    <div class="phase-card current">
+                        <div class="phase-header">
+                            <span class="phase-icon">⏳</span>
+                            <span class="phase-title">阶段二</span>
+                            <span class="phase-period">Day 8-14</span>
+                        </div>
+                        
+                        <div class="phase-progress-wrap">
+                            <div class="phase-progress-bar">
+                                <div class="phase-progress-fill" style="width: 33%;"></div>
+                            </div>
+                            <span class="phase-progress-text">1/3 单</span>
+                        </div>
+                        
+                        <div class="phase-threshold">
+                            <span class="threshold-label">订单门槛</span>
+                            <span class="threshold-value">3 单</span>
+                        </div>
+                        
+                        <div class="phase-expected">
+                            <span class="expected-label">预计奖励</span>
+                            <span class="expected-value">¥3.0</span>
+                        </div>
+                    </div>
+                    
+                    <!-- 锁定阶段3 -->
+                    <div class="phase-card locked">
+                        <div class="phase-header">
+                            <span class="phase-icon">🔒</span>
+                            <span class="phase-title">阶段三</span>
+                            <span class="phase-period">Day 15-21</span>
+                        </div>
+                        <div class="phase-locked-content">
+                            <span class="lock-icon">🔒</span>
+                            <span>需完成阶段二后自动解锁</span>
+                        </div>
+                    </div>
+                    
+                    <!-- 锁定阶段4 -->
+                    <div class="phase-card locked">
+                        <div class="phase-header">
+                            <span class="phase-icon">🔒</span>
+                            <span class="phase-title">阶段四</span>
+                            <span class="phase-period">Day 22-28</span>
+                        </div>
+                        <div class="phase-locked-content">
+                            <span class="lock-icon">🔒</span>
+                            <span>需完成阶段三后自动解锁</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 活动规则 -->
+                <div class="activity-rules">
+                    <div class="rules-title">活动规则</div>
+                    <ul class="rules-list">
+                        <li>活动期间内，按阶段完成出单任务即可获得对应奖励</li>
+                        <li>奖励将在阶段结束后3个工作日内发放</li>
+                        <li>每个阶段仅可完成一次，跨阶段奖励不叠加</li>
+                        <li>发现违规行为将取消活动参与资格</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Case 2：阶段2进行中，>50%显示下阶段预览 -->
+    <div id="scene2" class="scene">
+        <div class="scene-title">Case 2：阶段2进行中（完成率>50%）</div>
+        <div class="scene-desc">场景说明：推手在第2阶段，完成率60%（3/5单），>50%时显示第3阶段预览</div>
+        <div class="phone-frame">
+            <div class="phone-notch"></div>
+            <div class="phone-screen">
+                <!-- 页面头部 -->
+                <div class="page-header">
+                    <span class="back-btn">←</span>
+                    <span class="page-title">成长大礼包</span>
+                </div>
+                
+                <!-- 活动信息 -->
+                <div class="activity-info">
+                    <div class="activity-status">
+                        <span class="status-tag">进行中</span>
+                        <span>剩余时间: 3天8时</span>
+                    </div>
+                    <div class="activity-period">活动时间: 2026.04.01 - 2026.04.30</div>
+                </div>
+                
+                <!-- 整体进度条 -->
+                <div class="overall-progress">
+                    <div class="overall-header">
+                        <span class="overall-title">活动进度</span>
+                        <span class="overall-count">2/4 阶段</span>
+                    </div>
+                    <div class="overall-bar">
+                        <div class="overall-fill" style="width: 37.5%;"></div>
+                    </div>
+                    <div class="overall-milestones">
+                        <span>阶段一</span>
+                        <span>阶段二</span>
+                        <span>阶段三</span>
+                        <span>阶段四</span>
+                    </div>
+                </div>
+                
+                <!-- 阶段卡片 -->
+                <div class="phase-section">
+                    <!-- 已完成阶段1 -->
+                    <div class="phase-card completed">
+                        <div class="phase-header">
+                            <span class="phase-icon">✓</span>
+                            <span class="phase-title">阶段一</span>
+                            <span class="phase-period">Day 1-7</span>
+                        </div>
+                        <div class="phase-completed-info">
+                            <span>订单门槛: <span class="value">3单</span></span>
+                            <span>已完成: <span class="value">3单 ✓</span></span>
+                        </div>
+                        <div class="phase-reward">
+                            <span>奖励: <span class="value">1.0元/单</span></span>
+                            <span>已获得: <span class="value">3.0元 ✓</span></span>
+                        </div>
+                    </div>
+                    
+                    <!-- 当前进行中阶段2 -->
+                    <div class="phase-card current">
+                        <div class="phase-header">
+                            <span class="phase-icon">⏳</span>
+                            <span class="phase-title">阶段二</span>
+                            <span class="phase-period">Day 8-14</span>
+                        </div>
+                        
+                        <div class="phase-progress-wrap">
+                            <div class="phase-progress-bar">
+                                <div class="phase-progress-fill" style="width: 60%;"></div>
+                            </div>
+                            <span class="phase-progress-text">3/5 单</span>
+                        </div>
+                        
+                        <div class="phase-threshold">
+                            <span class="threshold-label">订单门槛</span>
+                            <span class="threshold-value">5 单</span>
+                        </div>
+                        
+                        <div class="phase-expected">
+                            <span class="expected-label">预计奖励</span>
+                            <span class="expected-value">¥4.5</span>
+                        </div>
+                    </div>
+                    
+                    <!-- 锁定阶段3 -->
+                    <div class="phase-card locked">
+                        <div class="phase-header">
+                            <span class="phase-icon">🔒</span>
+                            <span class="phase-title">阶段三</span>
+                            <span class="phase-period">Day 15-21</span>
+                        </div>
+                        <div class="phase-locked-content">
+                            <span class="lock-icon">🔒</span>
+                            <span>需完成阶段二后自动解锁</span>
+                        </div>
+                    </div>
+                    
+                    <!-- 锁定阶段4 -->
+                    <div class="phase-card locked">
+                        <div class="phase-header">
+                            <span class="phase-icon">🔒</span>
+                            <span class="phase-title">阶段四</span>
+                            <span class="phase-period">Day 22-28</span>
+                        </div>
+                        <div class="phase-locked-content">
+                            <span class="lock-icon">🔒</span>
+                            <span>需完成阶段三后自动解锁</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 下阶段预览（>50%时显示） -->
+                <div class="next-phase-preview">
+                    <div class="preview-header">
+                        <span class="preview-badge">完成后解锁</span>
+                        <span class="preview-title">阶段三预览</span>
+                    </div>
+                    <div class="preview-content">
+                        <span>订单门槛: <strong>7单</strong></span>
+                        <span>奖励单价: <strong>1.5元/单</strong></span>
+                        <span class="preview-reward">预计 ¥10.5</span>
+                    </div>
+                </div>
+                
+                <!-- 活动规则 -->
+                <div class="activity-rules">
+                    <div class="rules-title">活动规则</div>
+                    <ul class="rules-list">
+                        <li>活动期间内，按阶段完成出单任务即可获得对应奖励</li>
+                        <li>奖励将在阶段结束后3个工作日内发放</li>
+                        <li>每个阶段仅可完成一次，跨阶段奖励不叠加</li>
+                        <li>发现违规行为将取消活动参与资格</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Case 3：惊喜红包叠加在进度条上 -->
+    <div id="scene3" class="scene">
+        <div class="scene-title">Case 3：惊喜红包</div>
+        <div class="scene-desc">场景说明：推手在第2阶段，完成率40%（2/5单），惊喜红包叠加在进度条上，自动到账</div>
+        <div class="phone-frame">
+            <div class="phone-notch"></div>
+            <div class="phone-screen">
+                <!-- 页面头部 -->
+                <div class="page-header">
+                    <span class="back-btn">←</span>
+                    <span class="page-title">成长大礼包</span>
+                </div>
+                
+                <!-- 活动信息 -->
+                <div class="activity-info">
+                    <div class="activity-status">
+                        <span class="status-tag">进行中</span>
+                        <span>剩余时间: 2天5时</span>
+                    </div>
+                    <div class="activity-period">活动时间: 2026.04.01 - 2026.04.30</div>
+                </div>
+                
+                <!-- 整体进度条 -->
+                <div class="overall-progress">
+                    <div class="overall-header">
+                        <span class="overall-title">活动进度</span>
+                        <span class="overall-count">2/4 阶段</span>
+                    </div>
+                    <div class="overall-bar">
+                        <div class="overall-fill" style="width: 37.5%;"></div>
+                    </div>
+                    <div class="overall-milestones">
+                        <span>阶段一</span>
+                        <span>阶段二</span>
+                        <span>阶段三</span>
+                        <span>阶段四</span>
+                    </div>
+                </div>
+                
+                <!-- 阶段卡片 -->
+                <div class="phase-section">
+                    <!-- 已完成阶段1 -->
+                    <div class="phase-card completed">
+                        <div class="phase-header">
+                            <span class="phase-icon">✓</span>
+                            <span class="phase-title">阶段一</span>
+                            <span class="phase-period">Day 1-7</span>
+                        </div>
+                        <div class="phase-completed-info">
+                            <span>订单门槛: <span class="value">3单</span></span>
+                            <span>已完成: <span class="value">3单 ✓</span></span>
+                        </div>
+                        <div class="phase-reward">
+                            <span>奖励: <span class="value">1.0元/单</span></span>
+                            <span>已获得: <span class="value">3.0元 ✓</span></span>
+                        </div>
+                    </div>
+                    
+                    <!-- 当前进行中阶段2（带惊喜红包） -->
+                    <div class="phase-card current">
+                        <div class="phase-header">
+                            <span class="phase-icon">⏳</span>
+                            <span class="phase-title">阶段二</span>
+                            <span class="phase-period">Day 8-14</span>
+                        </div>
+                        
+                        <!-- 惊喜红包：插在进度条40%处 -->
+                        <div style="position:relative;height:46px;margin-bottom:10px;">
+                            <div class="phase-progress-bar" style="position:absolute;top:24px;left:0;right:0;">
+                                <div class="phase-progress-fill" style="width: 40%;"></div>
+                            </div>
+                            <!-- 红包气泡在进度条上方 -->
+                            <div style="position:absolute;left:calc(40% - 52px);top:-6px;background:linear-gradient(135deg,#ff6b6b,#ee5a24);color:#fff;padding:6px 12px;border-radius:8px;font-size:11px;font-weight:600;box-shadow:0 2px 8px rgba(238,90,36,0.4);white-space:nowrap;">
+                                🎁 送你满99-10惊喜红包
+                            </div>
+                            <!-- 小三角箭头 -->
+                            <div style="position:absolute;left:calc(40% - 18px);top:26px;width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:5px solid #ee5a24;"></div>
+                        </div>
+                        <div class="phase-progress-text" style="margin-bottom:10px;">2/5 单</div>
+                        
+                        <div class="phase-threshold">
+                            <span class="threshold-label">订单门槛</span>
+                            <span class="threshold-value">5 单</span>
+                        </div>
+                        
+                        <div class="phase-expected">
+                            <span class="expected-label">预计奖励</span>
+                            <span class="expected-value">¥3.0</span>
+                        </div>
+                        
+                        <!-- 惊喜红包提示（在预计奖励下方） -->
+                        <div style="display:flex;align-items:center;gap:6px;padding:10px 12px;background:#fff5f5;border-radius:8px;font-size:12px;color:#ee5a24;margin-top:10px;">
+                            <span>💪</span>
+                            <span>冲鸭！红包已到账，再冲一波更大惊喜等你拿！</span>
+                        </div>
+                    </div>
+                    
+                    <!-- 锁定阶段3 -->
+                    <div class="phase-card locked">
+                        <div class="phase-header">
+                            <span class="phase-icon">🔒</span>
+                            <span class="phase-title">阶段三</span>
+                            <span class="phase-period">Day 15-21</span>
+                        </div>
+                        <div class="phase-locked-content">
+                            <span class="lock-icon">🔒</span>
+                            <span>需完成阶段二后自动解锁</span>
+                        </div>
+                    </div>
+                    
+                    <!-- 锁定阶段4 -->
+                    <div class="phase-card locked">
+                        <div class="phase-header">
+                            <span class="phase-icon">🔒</span>
+                            <span class="phase-title">阶段四</span>
+                            <span class="phase-period">Day 22-28</span>
+                        </div>
+                        <div class="phase-locked-content">
+                            <span class="lock-icon">🔒</span>
+                            <span>需完成阶段三后自动解锁</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 活动规则 -->
+                <div class="activity-rules">
+                    <div class="rules-title">活动规则</div>
+                    <ul class="rules-list">
+                        <li>活动期间内，按阶段完成出单任务即可获得对应奖励</li>
+                        <li>奖励将在阶段结束后3个工作日内发放</li>
+                        <li>每个阶段仅可完成一次，跨阶段奖励不叠加</li>
+                        <li>发现违规行为将取消活动参与资格</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Case 4：全部完成 -->
+    <div id="scene4" class="scene">
+        <div class="scene-title">Case 4：全部完成</div>
+        <div class="scene-desc">场景说明：推手完成了全部4个阶段，展示活动期间的成长情况</div>
+        <div class="phone-frame">
+            <div class="phone-notch"></div>
+            <div class="phone-screen">
+                <!-- 完成头部 -->
+                <div class="completion-header">
+                    <div class="completion-icon">🏆</div>
+                    <div class="completion-title">恭喜全部完成！</div>
+                    <div class="completion-sub">您已完成本次推手激励活动全部阶段</div>
+                </div>
+                
+                <!-- 成长数据 -->
+                <div class="growth-stats">
+                    <div class="growth-item">
+                        <div class="growth-value">28</div>
+                        <div class="growth-label">累计订单</div>
+                        <div class="growth-trend">↑ 较上月 +40%</div>
+                    </div>
+                    <div class="growth-item">
+                        <div class="growth-value">¥5,600</div>
+                        <div class="growth-label">累计销售额</div>
+                        <div class="growth-trend">↑ 较上月 +35%</div>
+                    </div>
+                    <div class="growth-item">
+                        <div class="growth-value">¥56.0</div>
+                        <div class="growth-label">活动奖励</div>
+                        <div class="growth-trend">✅ 已发放</div>
+                    </div>
+                    <div class="growth-item">
+                        <div class="growth-value">Lv.3</div>
+                        <div class="growth-label">当前等级</div>
+                        <div class="growth-trend">↑ 已提升2级</div>
+                    </div>
+                </div>
+                
+                <!-- 等级提升 -->
+                <div class="level-up">
+                    <div class="level-badge">Lv.1</div>
+                    <div class="level-arrow">→</div>
+                    <div class="level-badge" style="background:#1a73e8;color:#fff;">Lv.3</div>
+                    <span style="font-size:13px;color:#333;margin-left:8px;">等级飙升！</span>
+                </div>
+                
+                <!-- 阶段时间线 -->
+                <div class="timeline">
+                    <div class="timeline-title">📊 各阶段完成情况</div>
+                    <div class="timeline-item">
+                        <div class="timeline-dot">✓</div>
+                        <div class="timeline-content">
+                            <div class="timeline-label">阶段一 · 3单</div>
+                            <div class="timeline-value">奖励 ¥3.0 · Day 1-7</div>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-dot">✓</div>
+                        <div class="timeline-content">
+                            <div class="timeline-label">阶段二 · 5单</div>
+                            <div class="timeline-value">奖励 ¥7.5 · Day 8-14</div>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-dot">✓</div>
+                        <div class="timeline-content">
+                            <div class="timeline-label">阶段三 · 8单</div>
+                            <div class="timeline-value">奖励 ¥12.0 · Day 15-21</div>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-dot">✓</div>
+                        <div class="timeline-content">
+                            <div class="timeline-label">阶段四 · 12单</div>
+                            <div class="timeline-value">奖励 ¥18.0 · Day 22-28</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 总奖励 -->
+                <div class="total-reward">
+                    <span class="total-reward-label">🎉 活动总奖励</span>
+                    <span class="total-reward-value">¥56.0</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 运营后台：创建活动 -->
+    <div id="admin-create" class="scene">
+        <div class="scene-title">运营后台 - 创建活动</div>
+        <div class="scene-desc">配置活动基本信息、阶段奖励规则、惊喜红包规则</div>
+        
+        <div class="admin-panel" style="max-width: 900px;">
+            <form>
+                <!-- 基本信息 -->
+                <div class="form-section">
+                    <div class="form-section-title">📋 活动基本信息</div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">活动名称</label>
+                            <input type="text" class="form-input" value="2024年Q2推手激励计划" placeholder="请输入活动名称">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">活动类型</label>
+                            <select class="form-select">
+                                <option value="">请选择活动类型</option>
+                                <option value="growth">成长激励活动</option>
+                                <option value="hierarchical" selected>层级活动</option>
+                                <option value="challenge">挑战赛</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">开始时间</label>
+                            <input type="date" class="form-input" value="2024-04-01">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">结束时间</label>
+                            <input type="date" class="form-input" value="2024-04-28">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">目标人群</label>
+                        <select class="form-select">
+                            <option value="">全部推手</option>
+                            <option value="new">新推手（注册30天内）</option>
+                            <option value="active">活跃推手（月活≥10单）</option>
+                            <option value="high">高潜推手（有潜力但未达标）</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- 阶段配置 -->
+                <div class="form-section">
+                    <div class="form-section-title">🎯 阶段配置</div>
+                    <div style="font-size:12px;color:#666;margin-bottom:16px;">设置每个阶段的订单门槛和奖励单价，完成对应订单数即可获得奖励</div>
+                    
+                    <!-- 阶段1 -->
+                    <div class="phase-config">
+                        <div class="phase-config-title">第1阶段</div>
+                        <div class="phase-config-desc">Day 1-7</div>
+                        <div class="two-col-layout">
+                            <div class="phase-input-group">
+                                <div class="phase-input-label">订单门槛（单）</div>
+                                <input type="number" class="phase-input" value="3">
+                            </div>
+                            <div class="phase-input-group">
+                                <div class="phase-input-label">奖励单价（元/单）</div>
+                                <input type="number" class="phase-input" value="1.0" step="0.1">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 阶段2 -->
+                    <div class="phase-config">
+                        <div class="phase-config-title">第2阶段</div>
+                        <div class="phase-config-desc">Day 8-14</div>
+                        <div class="two-col-layout">
+                            <div class="phase-input-group">
+                                <div class="phase-input-label">订单门槛（单）</div>
+                                <input type="number" class="phase-input" value="5">
+                            </div>
+                            <div class="phase-input-group">
+                                <div class="phase-input-label">奖励单价（元/单）</div>
+                                <input type="number" class="phase-input" value="1.5" step="0.1">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 阶段3 -->
+                    <div class="phase-config">
+                        <div class="phase-config-title">第3阶段</div>
+                        <div class="phase-config-desc">Day 15-21</div>
+                        <div class="two-col-layout">
+                            <div class="phase-input-group">
+                                <div class="phase-input-label">订单门槛（单）</div>
+                                <input type="number" class="phase-input" value="8">
+                            </div>
+                            <div class="phase-input-group">
+                                <div class="phase-input-label">奖励单价（元/单）</div>
+                                <input type="number" class="phase-input" value="1.5" step="0.1">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 阶段4 -->
+                    <div class="phase-config">
+                        <div class="phase-config-title">第4阶段</div>
+                        <div class="phase-config-desc">Day 22-28</div>
+                        <div class="two-col-layout">
+                            <div class="phase-input-group">
+                                <div class="phase-input-label">订单门槛（单）</div>
+                                <input type="number" class="phase-input" value="12">
+                            </div>
+                            <div class="phase-input-group">
+                                <div class="phase-input-label">奖励单价（元/单）</div>
+                                <input type="number" class="phase-input" value="1.5" step="0.1">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 惊喜红包规则 -->
+                <div class="form-section">
+                    <div class="form-section-title">🎁 惊喜红包规则</div>
+                    <div class="redpacket-rule">
+                        <div class="redpacket-title">⚡ 触发条件配置</div>
+                        <div class="redpacket-row">
+                            <div class="redpacket-item">
+                                <label class="form-label">预算金额</label>
+                                <input type="number" class="form-input" value="10000" style="text-align:center;">
+                            </div>
+                            <div class="redpacket-item">
+                                <label class="form-label">红包最小值</label>
+                                <input type="number" class="form-input" value="9" style="text-align:center;">
+                            </div>
+                            <div class="redpacket-item">
+                                <label class="form-label">红包最大值</label>
+                                <input type="number" class="form-input" value="10" style="text-align:center;">
+                            </div>
+                            <div class="redpacket-item">
+                                <label class="form-label">预期完成率</label>
+                                <input type="number" class="form-input" value="60" placeholder="60" style="text-align:center;"> %
+                            </div>
+                        </div>
+                        <div style="font-size:12px;color:#666;margin-top:12px;text-align:center;">
+                            当推手当前阶段完成率低于预期时，自动发放惊喜红包
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 操作按钮 -->
+                <div class="form-actions">
+                    <button type="button" class="btn btn-primary">创建活动</button>
+                    <button type="button" class="btn" style="background:#f0f0f0;color:#666;">保存草稿</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 运营后台：活动列表 -->
+    <div id="admin-list" class="scene">
+        <div class="scene-title">运营后台 - 活动列表</div>
+        <div class="scene-desc">查看所有活动的数据概况，支持筛选和操作</div>
+        
+        <div class="admin-panel" style="max-width: 1000px;">
+            <!-- 数据概览 -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">¥168.5万</div>
+                    <div class="stat-label">累计GMV</div>
+                </div>
+                <div class="stat-card success">
+                    <div class="stat-value">285%</div>
+                    <div class="stat-label">平均ROI</div>
+                </div>
+                <div class="stat-card warning">
+                    <div class="stat-value">1,258</div>
+                    <div class="stat-label">活跃推手</div>
+                </div>
+                <div class="stat-card orange">
+                    <div class="stat-value">68%</div>
+                    <div class="stat-label">预算消耗</div>
+                </div>
+            </div>
+            
+            <!-- 筛选标签 -->
+            <div class="filter-tabs">
+                <button class="filter-tab active">全部 (5)</button>
+                <button class="filter-tab">进行中 (2)</button>
+                <button class="filter-tab">未开始 (1)</button>
+                <button class="filter-tab">已结束 (2)</button>
+            </div>
+            
+            <!-- 活动表格 -->
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>活动名称</th>
+                        <th>类型</th>
+                        <th>周期</th>
+                        <th>参与人数</th>
+                        <th>达标率</th>
+                        <th>ROI</th>
+                        <th>预算消耗</th>
+                        <th>状态</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>2024年Q2推手激励计划</td>
+                        <td>层级活动</td>
+                        <td>04.01-04.28</td>
+                        <td>1,258</td>
+                        <td>72%</td>
+                        <td>285%</td>
+                        <td>
+                            <span class="progress-bar-mini"><span class="progress-bar-mini-fill" style="width:68%;"></span></span>
+                            68%
+                        </td>
+                        <td><span class="status-badge status-active">进行中</span></td>
+                        <td>
+                            <div class="action-btns">
+                                <button class="btn-sm btn-info">详情</button>
+                                <button class="btn-sm btn-danger">结束</button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>3月冲刺挑战赛</td>
+                        <td>挑战赛</td>
+                        <td>03.01-03.31</td>
+                        <td>892</td>
+                        <td>65%</td>
+                        <td>320%</td>
+                        <td>
+                            <span class="progress-bar-mini"><span class="progress-bar-mini-fill" style="width:100%;background:#34a853;"></span></span>
+                            100%
+                        </td>
+                        <td><span class="status-badge status-ended">已结束</span></td>
+                        <td>
+                            <div class="action-btns">
+                                <button class="btn-sm btn-info">详情</button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>新推手成长计划</td>
+                        <td>成长激励</td>
+                        <td>04.15-05.15</td>
+                        <td>456</td>
+                        <td>-</td>
+                        <td>-</td>
+                        <td>
+                            <span class="progress-bar-mini"><span class="progress-bar-mini-fill" style="width:0%;"></span></span>
+                            0%
+                        </td>
+                        <td><span class="status-badge status-pending">未开始</span></td>
+                        <td>
+                            <div class="action-btns">
+                                <button class="btn-sm btn-info">编辑</button>
+                                <button class="btn-sm btn-danger">删除</button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 运营后台：预算管理 -->
+    <div id="admin-budget" class="scene">
+        <div class="scene-title">运营后台 - 预算管理</div>
+        <div class="scene-desc">设置各活动类型的月度预算，监控消耗情况</div>
+        
+        <div class="admin-panel" style="max-width: 900px;">
+            <div style="display:grid;grid-template-columns:2fr 1fr 2fr 1fr 1fr;gap:16px;align-items:center;padding:8px 16px;margin-bottom:8px;font-weight:600;font-size:13px;color:#666;">
+                <div>活动类型</div>
+                <div>月度预算</div>
+                <div>消耗进度</div>
+                <div>已消耗</div>
+                <div>状态</div>
+            </div>
+            
+            <div class="budget-row">
+                <div class="budget-type">🎯 层级活动</div>
+                <div class="budget-amount">¥50,000</div>
+                <div>
+                    <div class="budget-progress"><div class="budget-progress-fill" style="width:68%;background:#1a73e8;"></div></div>
+                    <div style="font-size:12px;color:#666;margin-top:4px;">68%</div>
+                </div>
+                <div style="font-size:14px;color:#333;">¥34,000</div>
+                <div><span class="budget-status" style="background:#fff3e0;color:#e65100;">正常</span></div>
+            </div>
+            
+            <div class="budget-row">
+                <div class="budget-type">🚀 挑战赛</div>
+                <div class="budget-amount">¥30,000</div>
+                <div>
+                    <div class="budget-progress"><div class="budget-progress-fill" style="width:100%;background:#34a853;"></div></div>
+                    <div style="font-size:12px;color:#666;margin-top:4px;">100%</div>
+                </div>
+                <div style="font-size:14px;color:#333;">¥30,000</div>
+                <div><span class="budget-status" style="background:#ffebee;color:#c62828;">已超支</span></div>
+            </div>
+            
+            <div class="budget-row">
+                <div class="budget-type">📈 成长激励</div>
+                <div class="budget-amount">¥20,000</div>
+                <div>
+                    <div class="budget-progress"><div class="budget-progress-fill" style="width:45%;background:#1a73e8;"></div></div>
+                    <div style="font-size:12px;color:#666;margin-top:4px;">45%</div>
+                </div>
+                <div style="font-size:14px;color:#333;">¥9,000</div>
+                <div><span class="budget-status" style="background:#fff3e0;color:#e65100;">正常</span></div>
+            </div>
+            
+            <div class="budget-row">
+                <div class="budget-type">🎁 惊喜红包</div>
+                <div class="budget-amount">¥10,000</div>
+                <div>
+                    <div class="budget-progress"><div class="budget-progress-fill" style="width:85%;background:#f093fb;"></div></div>
+                    <div style="font-size:12px;color:#666;margin-top:4px;">85%</div>
+                </div>
+                <div style="font-size:14px;color:#333;">¥8,500</div>
+                <div><span class="budget-status" style="background:#ffebee;color:#c62828;">预警</span></div>
+            </div>
+            
+            <div style="margin-top:24px;padding:16px;background:#f8f9fa;border-radius:12px;text-align:center;">
+                <div style="font-size:14px;color:#666;margin-bottom:8px;">当月总预算</div>
+                <div style="font-size:28px;font-weight:700;color:#1a73e8;">¥110,000</div>
+                <div style="font-size:13px;color:#666;margin-top:8px;">已消耗 ¥81,500（74%）</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showScene(sceneId) {
+            // 隐藏所有场景
+            document.querySelectorAll('.scene').forEach(scene => {
+                scene.classList.remove('active');
+            });
+            // 移除所有tab激活状态
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            // 显示目标场景
+            document.getElementById(sceneId).classList.add('active');
+            // 激活对应tab
+            event.target.classList.add('active');
+        }
+    </script>
+</body>
+</html>
